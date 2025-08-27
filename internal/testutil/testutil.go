@@ -38,3 +38,11 @@ func AssertEqual[T comparable](t *testing.T, got, want T) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
 }
+
+// AssertNotEqual fails the test if got == want
+func AssertNotEqual[T comparable](t *testing.T, got, want T) {
+	t.Helper()
+	if got == want {
+		t.Fatalf("got %v, expected not equal to %v", got, want)
+	}
+}

@@ -5,7 +5,9 @@ This package offers three main types of rate limiters:
 
   - bucket: Token bucket rate limiter allowing burst traffic
   - leakybucket: Leaky bucket rate limiter for smooth traffic flow
-  - concurrency: Concurrency limiter for controlling goroutine usage
+  - concurrency: Concurrency limiter for controlling concurrent operations
+
+Rate Limiter Types:
 
 Token Bucket vs Leaky Bucket:
 
@@ -23,13 +25,26 @@ Leaky bucket enforces smooth flow and is ideal for traffic shaping:
 		// Process request (smooth flow, no bursts)
 	}
 
-Both limiters support:
+Concurrency limiter controls the number of simultaneous operations:
+
+	concLimiter := concurrency.New(10) // Max 10 concurrent operations
+	if concLimiter.Acquire() {
+		defer concLimiter.Release()
+		// Process operation (limited by concurrency, not time)
+	}
+
+All rate limiters support:
   - Context-aware blocking operations (Wait/WaitN)
-  - Reservation patterns for advance booking
   - Dynamic configuration changes
   - Comprehensive state inspection
+  - Safe concurrent access
 
-All rate limiters are safe for concurrent use and integrate with
-the context package for cancellation and timeouts.
+Rate vs Concurrency Limiting:
+  - Rate limiters control operations per unit of time
+  - Concurrency limiters control simultaneous operations
+  - Rate limiters include reservation patterns for advance booking
+  - Concurrency limiters provide semaphore-like functionality
+
+All rate limiters integrate with the context package for cancellation and timeouts.
 */
 package ratelimit
