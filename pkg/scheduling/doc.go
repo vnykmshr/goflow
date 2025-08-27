@@ -9,12 +9,12 @@ This package offers three main scheduling primitives:
 
 Basic usage:
 
-    // Create a worker pool with 5 workers
-    pool := pool.New(5)
-    defer pool.Close()
-    
-    // Submit a task
-    err := pool.Submit(ctx, task)
+	// Create a worker pool with 5 workers
+	pool := pool.New(5)
+	defer pool.Close()
+
+	// Submit a task
+	err := pool.Submit(ctx, task)
 
 All scheduling components support graceful shutdown and integrate with
 the context package for cancellation and timeout handling.

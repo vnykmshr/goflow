@@ -29,9 +29,6 @@ linters:
     - staticcheck
     - typecheck
     - unused
-    - varcheck
-    - structcheck
-    - deadcode
     - gofmt
     - goimports
     - misspell
@@ -40,7 +37,6 @@ linters:
     - gocyclo
     - unparam
     - prealloc
-    - exportloopref
 
 issues:
   exclude-rules:
@@ -48,6 +44,10 @@ issues:
       linters:
         - gocyclo
         - errcheck
+        - staticcheck
     - path: examples/
       linters:
         - errcheck
+    - linters:
+        - govet
+      text: "fieldalignment"

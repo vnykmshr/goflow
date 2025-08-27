@@ -1,4 +1,4 @@
-.PHONY: build test lint clean install-tools fmt bench deps help
+.PHONY: build test lint clean install-tools fmt bench deps help check vet
 
 # Variables
 BINARY_NAME=goflow
@@ -7,13 +7,22 @@ GO_VERSION=$(shell go version | cut -d ' ' -f 3)
 # Default target
 all: lint test build
 
+# Run all checks (fmt, vet, lint, test, build)
+check: fmt vet lint test build
+
+# Run go vet
+vet:
+	go vet ./...
+
 # Show help
 help:
 	@echo "Available targets:"
+	@echo "  check         - Run all checks (fmt, vet, lint, test, build)"
 	@echo "  build         - Build the project"
 	@echo "  test          - Run tests with coverage"
 	@echo "  lint          - Run linter"
 	@echo "  fmt           - Format code"
+	@echo "  vet           - Run go vet"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  install-tools - Install development tools"
 	@echo "  bench         - Run benchmarks"

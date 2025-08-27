@@ -10,12 +10,12 @@ This package provides three main streaming components:
 
 Basic usage:
 
-    // Create an asynchronous writer
-    writer := writer.New(underlyingWriter, bufferSize)
-    defer writer.Close()
-    
-    // Write data asynchronously
-    writer.Write(data)
+	// Create an asynchronous writer
+	writer := writer.New(underlyingWriter, bufferSize)
+	defer writer.Close()
+
+	// Write data asynchronously
+	writer.Write(data)
 
 All streaming components support common operations like filtering, mapping,
 and reducing, with built-in error handling and cancellation support.
