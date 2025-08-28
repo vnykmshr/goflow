@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -41,7 +40,7 @@ type WebService struct {
 
 	// Background processing
 	backgroundWorkers workerpool.Pool
-	taskScheduler     *scheduler.Scheduler
+	taskScheduler     scheduler.Scheduler
 
 	// Data processing
 	dataPipeline pipeline.Pipeline
@@ -81,17 +80,12 @@ func NewWebService(port string) (*WebService, error) {
 
 	// Create worker pool for background tasks
 	workerConfig := workerpool.Config{
-		WorkerCount:   10,
-		QueueSize:     1000,
-		TaskTimeout:   30 * time.Second,
-		EnableMetrics: true,
-		MetricsConfig: metrics.Config{Enabled: true, Registry: promRegistry},
+		WorkerCount: 10,
+		QueueSize:   1000,
+		TaskTimeout: 30 * time.Second,
 	}
 
-	workers, err := workerpool.NewWithConfig(workerConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create worker pool: %w", err)
-	}
+	workers := workerpool.NewWithConfig(workerConfig)
 
 	// Create task scheduler
 	sched := scheduler.New()
@@ -132,12 +126,12 @@ func setupDataPipeline(p pipeline.Pipeline) {
 	// Stage 1: Data validation and sanitization
 	p.AddStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
-		
+
 		// Simulate validation
 		if data["id"] == nil {
 			return nil, fmt.Errorf("missing required field: id")
 		}
-		
+
 		data["validated"] = true
 		data["validated_at"] = time.Now()
 		return data, nil
@@ -146,38 +140,38 @@ func setupDataPipeline(p pipeline.Pipeline) {
 	// Stage 2: Data enrichment
 	p.AddStageFunc("enrich", func(ctx context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
-		
+
 		// Simulate external API call for data enrichment
 		data["enriched"] = true
 		data["country"] = "US" // Mock geo-location
 		data["enriched_at"] = time.Now()
-		
+
 		return data, nil
 	})
 
 	// Stage 3: Data transformation
 	p.AddStageFunc("transform", func(ctx context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
-		
+
 		// Simulate business logic transformation
 		if userID, ok := data["id"].(float64); ok {
 			data["user_tier"] = getUserTier(int(userID))
 		}
-		
+
 		data["transformed"] = true
 		data["transformed_at"] = time.Now()
-		
+
 		return data, nil
 	})
 
 	// Stage 4: Data persistence
 	p.AddStageFunc("persist", func(ctx context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
-		
+
 		// Simulate database write
 		data["persisted"] = true
 		data["persisted_at"] = time.Now()
-		
+
 		return data, nil
 	})
 }
@@ -187,26 +181,24 @@ func (ws *WebService) setupRoutes(mux *http.ServeMux) {
 	// API endpoint with rate limiting
 	mux.HandleFunc("/api/users", ws.withRateLimit(ws.apiRateLimiter, ws.handleUsers))
 	mux.HandleFunc("/api/data", ws.withRateLimit(ws.apiRateLimiter, ws.handleDataProcessing))
-	
+
 	// Upload endpoint with stricter rate limiting
 	mux.HandleFunc("/api/upload", ws.withRateLimit(ws.uploadRateLimiter, ws.handleUpload))
-	
+
 	// Database operations with concurrency limiting
 	mux.HandleFunc("/api/db/users", ws.withConcurrencyLimit(ws.dbConnectionLimiter, ws.handleDatabaseQuery))
-	
+
 	// CPU-intensive operations with concurrency limiting
 	mux.HandleFunc("/api/process", ws.withConcurrencyLimit(ws.cpuIntensiveLimiter, ws.handleCPUIntensive))
-	
+
 	// Background task submission
 	mux.HandleFunc("/api/tasks", ws.handleTaskSubmission)
-	
+
 	// Health check endpoint
 	mux.HandleFunc("/health", ws.handleHealth)
-	
+
 	// Metrics endpoint
-	mux.Handle("/metrics", promhttp.HandlerFor(prometheus.GathererFunc(func() ([]*prometheus.MetricFamily, error) {
-		return ws.metricsRegistry.DefaultRegistry.Gather()
-	}), promhttp.HandlerOpts{}))
+	mux.Handle("/metrics", promhttp.Handler())
 }
 
 // withRateLimit wraps a handler with rate limiting
@@ -228,7 +220,7 @@ func (ws *WebService) withConcurrencyLimit(limiter concurrency.Limiter, handler 
 			return
 		}
 		defer limiter.Release()
-		
+
 		handler(w, r)
 	}
 }
@@ -307,28 +299,36 @@ func (ws *WebService) handleTaskSubmission(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Submit background task
-	task := workerpool.TaskFunc(func(ctx context.Context) (interface{}, error) {
+	task := workerpool.TaskFunc(func(ctx context.Context) error {
 		// Simulate background work
 		select {
 		case <-time.After(1 * time.Second):
-			return "Background task completed", nil
+			log.Printf("Background task completed")
+			return nil
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return ctx.Err()
 		}
 	})
 
-	result := ws.backgroundWorkers.Submit(r.Context(), task)
-	
-	// Don't wait for result, just acknowledge submission
-	fmt.Fprintf(w, `{"message": "Task submitted", "task_id": "%p"}`, result)
+	err := ws.backgroundWorkers.Submit(task)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to submit task: %v", err), http.StatusServiceUnavailable)
+		return
+	}
+
+	// Acknowledge submission
+	fmt.Fprintf(w, `{"message": "Task submitted successfully"}`)
 }
 
 // handleHealth provides health check endpoint
 func (ws *WebService) handleHealth(w http.ResponseWriter, r *http.Request) {
 	health := map[string]interface{}{
-		"status":        "healthy",
-		"timestamp":     time.Now().Unix(),
-		"worker_stats":  ws.backgroundWorkers.Stats(),
+		"status":    "healthy",
+		"timestamp": time.Now().Unix(),
+		"workers": map[string]interface{}{
+			"size":       ws.backgroundWorkers.Size(),
+			"queue_size": ws.backgroundWorkers.QueueSize(),
+		},
 		"api_tokens":    fmt.Sprintf("%.1f", ws.apiRateLimiter.Tokens()),
 		"upload_tokens": fmt.Sprintf("%.1f", ws.uploadRateLimiter.Tokens()),
 		"db_available":  ws.dbConnectionLimiter.Available(),
@@ -360,7 +360,7 @@ func (ws *WebService) Start(ctx context.Context) error {
 		log.Printf("Background workers: %d", ws.backgroundWorkers.Size())
 		log.Printf("Health check: http://localhost%s/health", ws.httpServer.Addr)
 		log.Printf("Metrics: http://localhost%s/metrics", ws.httpServer.Addr)
-		
+
 		if err := ws.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("HTTP server error: %v", err)
 		}
@@ -375,21 +375,22 @@ func (ws *WebService) Start(ctx context.Context) error {
 // setupScheduledTasks configures periodic maintenance tasks
 func (ws *WebService) setupScheduledTasks() error {
 	// Schedule metrics cleanup task every 5 minutes
-	_, err := ws.taskScheduler.ScheduleRepeating("metrics-cleanup", 5*time.Minute, scheduler.TaskFunc(func(ctx context.Context) error {
+	err := ws.taskScheduler.ScheduleRepeating("metrics-cleanup", workerpool.TaskFunc(func(ctx context.Context) error {
 		log.Println("Running scheduled metrics cleanup task")
 		// Simulate metrics cleanup
 		return nil
-	}))
+	}), 5*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	// Schedule health check task every 30 seconds
-	_, err = ws.taskScheduler.ScheduleRepeating("health-check", 30*time.Second, scheduler.TaskFunc(func(ctx context.Context) error {
-		stats := ws.backgroundWorkers.Stats()
-		log.Printf("Health check - Active workers: %d, Queued tasks: %d", stats.ActiveWorkers, stats.QueuedTasks)
+	err = ws.taskScheduler.ScheduleRepeating("health-check", workerpool.TaskFunc(func(ctx context.Context) error {
+		size := ws.backgroundWorkers.Size()
+		queueSize := ws.backgroundWorkers.QueueSize()
+		log.Printf("Health check - Workers: %d, Queued tasks: %d", size, queueSize)
 		return nil
-	}))
+	}), 30*time.Second)
 	if err != nil {
 		return err
 	}
@@ -414,7 +415,7 @@ func (ws *WebService) Shutdown() error {
 	ws.taskScheduler.Stop()
 
 	// Shutdown worker pool
-	ws.backgroundWorkers.Shutdown(shutdownCtx)
+	<-ws.backgroundWorkers.Shutdown()
 
 	log.Println("Web service shut down complete")
 	return nil

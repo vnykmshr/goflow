@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/vnykmshr/goflow/pkg/metrics"
 )
 
@@ -123,7 +124,7 @@ func Example_metricsHTTPServer() {
 		Registry: customRegistry,
 	}
 
-	// Create rate limiter with custom metrics registry  
+	// Create rate limiter with custom metrics registry
 	limiter := NewWithConfigAndMetrics(Config{
 		Rate:          10,
 		Burst:         20,

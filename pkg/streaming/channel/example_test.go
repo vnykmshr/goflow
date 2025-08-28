@@ -201,7 +201,7 @@ func Example_errorStrategy() {
 func Example_contextCancellation() {
 	// Note: Due to current implementation limitations with blocking and context timeouts,
 	// this example demonstrates the intended behavior conceptually.
-	
+
 	fmt.Println("Context cancellation would work with:")
 	fmt.Println("- Non-blocking operations (TrySend/TryReceive)")
 	fmt.Println("- Properly implemented context-aware blocking")

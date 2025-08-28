@@ -26,11 +26,11 @@ var (
 
 // ValidationError represents a configuration validation error with actionable details
 type ValidationError struct {
-	Module  string      // The module where the error occurred
-	Field   string      // The configuration field that's invalid
-	Value   interface{} // The invalid value provided
-	Reason  string      // Why the value is invalid
-	Hint    string      // Suggestion for fixing the issue
+	Module string      // The module where the error occurred
+	Field  string      // The configuration field that's invalid
+	Value  interface{} // The invalid value provided
+	Reason string      // Why the value is invalid
+	Hint   string      // Suggestion for fixing the issue
 }
 
 func (e *ValidationError) Error() string {

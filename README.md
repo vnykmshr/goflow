@@ -1,12 +1,13 @@
-# goflow - Enterprise-Grade Go Async/IO Toolkit
+# goflow v1.0.0 - Production-Ready Go Async/IO Toolkit 🚀
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/vnykmshr/goflow.svg)](https://pkg.go.dev/github.com/vnykmshr/goflow)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vnykmshr/goflow)](https://goreportcard.com/report/github.com/vnykmshr/goflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/coverage-90%2B-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
 
-A comprehensive, enterprise-grade Go library providing sophisticated asynchronous patterns, advanced scheduling capabilities, and high-performance concurrent primitives for building robust distributed applications. Built with production-grade features including comprehensive metrics, distributed coordination, and advanced scheduling patterns.
+A production-ready, comprehensive Go library for building robust concurrent applications with rate limiting, scheduling, streaming, and pipeline processing. Features excellent developer experience with helpful error messages, comprehensive documentation, and real-world integration examples.
 
 ## 🚀 Key Features
 
@@ -49,7 +50,7 @@ A comprehensive, enterprise-grade Go library providing sophisticated asynchronou
 go get github.com/vnykmshr/goflow
 ```
 
-### Basic Usage
+### Basic Usage with Safe Constructors
 
 ```go
 package main
@@ -57,6 +58,7 @@ package main
 import (
     "context"
     "fmt"
+    "log"
     "time"
     
     "github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
@@ -67,39 +69,52 @@ import (
 func main() {
     ctx := context.Background()
     
-    // Rate limiting with burst capacity
-    limiter := bucket.New(10, 1.0) // 10 tokens, refill 1/second
+    // Rate limiting with safe constructors and error handling
+    limiter, err := bucket.NewSafe(10, 20) // 10 RPS, burst 20
+    if err != nil {
+        log.Fatalf("Failed to create rate limiter: %v", err)
+    }
     
-    // Advanced worker pool with metrics
-    pool := workerpool.New(5, 100) // 5 workers, 100 task buffer
+    // Worker pool with custom configuration
+    pool := workerpool.NewWithConfig(workerpool.Config{
+        WorkerCount: 5,
+        QueueSize:   100,
+        TaskTimeout: 30 * time.Second,
+    })
     defer func() { <-pool.Shutdown() }()
     
-    // Enterprise scheduler with cron support
-    sched := scheduler.NewAdvancedScheduler()
+    // Basic scheduler with timezone support
+    sched := scheduler.New()
     defer func() { <-sched.Stop() }()
     sched.Start()
     
-    // Rate-limited task processing
-    if limiter.Allow(ctx) {
+    // Rate-limited task processing with proper error checking
+    if limiter.Allow() {
         task := workerpool.TaskFunc(func(ctx context.Context) error {
             fmt.Println("Processing high-priority request...")
             return nil
         })
         
-        // Submit to worker pool
-        pool.Submit(task)
+        // Submit to worker pool with error handling
+        if err := pool.Submit(task); err != nil {
+            log.Printf("Failed to submit task: %v", err)
+            return
+        }
         
         // Schedule recurring cleanup job
         cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
             fmt.Println("Running cleanup...")
             return nil
         })
-        sched.ScheduleCron("cleanup", "@daily", cleanupTask)
+        
+        if err := sched.ScheduleCron("cleanup", "@daily", cleanupTask); err != nil {
+            log.Printf("Failed to schedule cleanup: %v", err)
+        }
     }
 }
 ```
 
-### Advanced Enterprise Example
+### Production Web Service Example
 
 ```go
 package main
@@ -107,66 +122,95 @@ package main
 import (
     "context"
     "fmt"
+    "log"
+    "net/http"
     "time"
     
-    "github.com/vnykmshr/goflow/pkg/ratelimit/distributed"
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
+    
+    "github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
+    "github.com/vnykmshr/goflow/pkg/ratelimit/concurrency"
+    "github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
     "github.com/vnykmshr/goflow/pkg/scheduling/scheduler"
-    "github.com/vnykmshr/goflow/pkg/metrics"
 )
 
 func main() {
-    // Distributed rate limiting with Redis
-    limiter := distributed.NewRedisTokenBucket(distributed.RedisConfig{
-        Addr: "localhost:6379",
-        Key:  "api_rate_limit",
-        Capacity: 1000,
-        RefillRate: 100,
-        Window: time.Minute,
-    })
+    // Create rate limiters with proper error handling
+    apiLimiter, err := bucket.NewSafe(100, 200) // 100 RPS, burst 200
+    if err != nil {
+        log.Fatalf("Failed to create API rate limiter: %v", err)
+    }
     
-    // Context-aware scheduler with sophisticated patterns
-    sched := scheduler.WithGlobalTimeout(scheduler.Config{}, 30*time.Second)
-    sched.SetContextPropagation(true, []interface{}{"trace_id", "user_id"})
+    uploadLimiter, err := bucket.NewSafe(10, 50) // 10 RPS, burst 50 for uploads
+    if err != nil {
+        log.Fatalf("Failed to create upload rate limiter: %v", err)
+    }
+    
+    // Create concurrency limiters for resource protection
+    dbLimiter, err := concurrency.NewSafe(20) // Max 20 concurrent DB operations
+    if err != nil {
+        log.Fatalf("Failed to create DB limiter: %v", err)
+    }
+    
+    // Create worker pool for background tasks
+    workers := workerpool.NewWithConfig(workerpool.Config{
+        WorkerCount: 10,
+        QueueSize:   1000,
+        TaskTimeout: 30 * time.Second,
+    })
+    defer func() { <-workers.Shutdown() }()
+    
+    // Create scheduler for maintenance tasks
+    sched := scheduler.New()
     sched.Start()
     defer func() { <-sched.Stop() }()
     
-    // Exponential backoff for resilient operations
-    resilientTask := workerpool.TaskFunc(func(ctx context.Context) error {
-        // Simulate API call that might fail
-        if time.Now().UnixNano()%3 == 0 {
-            return fmt.Errorf("temporary API error")
-        }
-        fmt.Printf("API call succeeded for user %v\n", ctx.Value("user_id"))
+    // Setup HTTP server with middleware
+    mux := http.NewServeMux()
+    
+    // API endpoints with rate limiting
+    mux.HandleFunc("/api/users", withRateLimit(apiLimiter, handleUsers))
+    mux.HandleFunc("/api/upload", withRateLimit(uploadLimiter, handleUpload))
+    
+    // Database operations with concurrency limiting  
+    mux.HandleFunc("/api/db/query", withConcurrencyLimit(dbLimiter, handleDB))
+    
+    // Health and metrics endpoints
+    mux.HandleFunc("/health", handleHealth)
+    mux.Handle("/metrics", promhttp.Handler())
+    
+    // Schedule maintenance tasks
+    sched.ScheduleRepeating("cleanup", workerpool.TaskFunc(func(ctx context.Context) error {
+        log.Println("Running scheduled cleanup")
         return nil
-    })
+    }), 5*time.Minute)
     
-    // Schedule with advanced patterns
-    sched.ScheduleWithBackoff("api_call", resilientTask, scheduler.BackoffConfig{
-        InitialDelay: 100 * time.Millisecond,
-        MaxDelay:     10 * time.Second,
-        Multiplier:   2.0,
-        MaxRetries:   5,
-    })
-    
-    // Prometheus metrics integration
-    metricsConfig := metrics.Config{
-        Namespace: "myapp",
-        Subsystem: "scheduler",
-        EnableHistograms: true,
+    // Start server
+    server := &http.Server{Addr: ":8080", Handler: mux}
+    log.Println("Starting server on :8080")
+    log.Fatal(server.ListenAndServe())
+}
+
+func withRateLimit(limiter bucket.Limiter, handler http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        if !limiter.Allow() {
+            http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+            return
+        }
+        handler(w, r)
     }
-    metricsProvider := metrics.NewPrometheusMetrics(metricsConfig)
-    
-    // Your application logic here...
 }
 ```
 
 ## Design Principles
 
+- **Developer-First**: Safe constructors, comprehensive error messages, and excellent documentation
+- **Production-Ready**: Enterprise-grade error handling, graceful shutdown, and observability
 - **Idiomatic Go**: Uses standard Go concurrency primitives (goroutines, channels, context)
-- **Simplicity**: Clean APIs that abstract common boilerplate and pitfalls
-- **Performance**: High-performance and low overhead design
-- **Modularity**: Loosely coupled packages for selective imports
-- **Robustness**: Graceful failure handling with context integration
+- **Performance**: High-performance and low overhead design with extensive benchmarking
+- **Modularity**: Loosely coupled packages for selective imports and dependency management
+- **Robustness**: Context-aware operations with comprehensive timeout and cancellation support
 
 ## Installation
 
@@ -174,10 +218,12 @@ func main() {
 go get github.com/vnykmshr/goflow
 ```
 
-## Documentation
+## Documentation & Examples
 
-- [API Documentation](https://pkg.go.dev/github.com/vnykmshr/goflow)
-- [Examples](./examples/)
+- [📖 Getting Started Guide](./GETTING_STARTED.md) - Comprehensive guide for new users
+- [🏗️ Production Web Service Example](./examples/web-service/main.go) - Complete integration example
+- [📚 API Documentation](https://pkg.go.dev/github.com/vnykmshr/goflow) - Complete API reference
+- [🎯 Examples](./examples/) - Focused examples for each module
 
 ## Contributing
 
