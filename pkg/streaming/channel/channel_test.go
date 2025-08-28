@@ -103,21 +103,21 @@ func TestBlockStrategy(t *testing.T) {
 	testutil.AssertEqual(t, ch.Len(), 2)
 
 	// Start a goroutine to send (should block)
-	var blocked bool
+	var blocked int64
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		blocked = true
+		atomic.StoreInt64(&blocked, 1)
 		err := ch.Send(ctx, 3)
 		testutil.AssertNoError(t, err)
-		blocked = false
+		atomic.StoreInt64(&blocked, 0)
 	}()
 
 	// Give goroutine time to block
 	time.Sleep(10 * time.Millisecond)
-	testutil.AssertEqual(t, blocked, true)
+	testutil.AssertEqual(t, atomic.LoadInt64(&blocked), int64(1))
 
 	// Receive to unblock
 	val, err := ch.Receive(ctx)
@@ -125,7 +125,7 @@ func TestBlockStrategy(t *testing.T) {
 	testutil.AssertEqual(t, val, 1)
 
 	wg.Wait()
-	testutil.AssertEqual(t, blocked, false)
+	testutil.AssertEqual(t, atomic.LoadInt64(&blocked), int64(0))
 	testutil.AssertEqual(t, ch.Len(), 2)
 }
 

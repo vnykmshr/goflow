@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync/atomic"
 	"time"
 
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
@@ -35,10 +36,10 @@ func ExampleScheduler_repeating() {
 	defer func() { <-scheduler.Stop() }()
 	scheduler.Start()
 
-	count := 0
+	var count int64
 	task := workerpool.TaskFunc(func(ctx context.Context) error {
-		count++
-		fmt.Printf("Execution %d\n", count)
+		current := atomic.AddInt64(&count, 1)
+		fmt.Printf("Execution %d\n", current)
 		return nil
 	})
 
