@@ -67,9 +67,11 @@ func Example_blockStrategy() {
 
 	// Receive to unblock the sender
 	val, _ := ch.Receive(ctx)
-	fmt.Printf("Received: %s\n", val)
-
+	
+	// Wait for the goroutine to complete
 	wg.Wait()
+	
+	fmt.Printf("Received: %s\n", val)
 
 	// Output:
 	// Buffer full: 2/2

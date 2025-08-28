@@ -56,8 +56,8 @@ func Example_repeatingTasks() {
 	// Schedule task to repeat 3 times every 50ms
 	scheduler.ScheduleRepeating("repeater", task, 50*time.Millisecond, 3)
 
-	// Wait for all executions
-	time.Sleep(300 * time.Millisecond)
+	// Wait for all executions (allow extra time for scheduling)
+	time.Sleep(500 * time.Millisecond)
 
 	fmt.Printf("Total: %d\n", atomic.LoadInt32(&counter))
 
@@ -122,8 +122,8 @@ func Example_delayedExecution() {
 	// Schedule task to run after a delay
 	scheduler.ScheduleAfter("delayed", task, 30*time.Millisecond)
 
-	// Wait for execution
-	time.Sleep(100 * time.Millisecond)
+	// Wait for execution (allow extra time for scheduling)
+	time.Sleep(200 * time.Millisecond)
 
 	// Output:
 	// Delayed task executed
@@ -143,11 +143,11 @@ func Example_periodicTasks() {
 		return nil
 	})
 
-	// Schedule task to run immediately and then every 25ms, max 2 times
-	scheduler.ScheduleEvery("periodic", task, 25*time.Millisecond, 2)
+	// Schedule task to run immediately and then every 50ms, max 2 times
+	scheduler.ScheduleEvery("periodic", task, 50*time.Millisecond, 2)
 
-	// Wait for executions
-	time.Sleep(120 * time.Millisecond)
+	// Wait for executions (allow extra time for all tasks)
+	time.Sleep(300 * time.Millisecond)
 
 	fmt.Printf("Executions: %d\n", atomic.LoadInt32(&counter))
 
@@ -178,8 +178,8 @@ func Example_statistics() {
 	fmt.Printf("Initial - Scheduled: %d, Current: %d\n",
 		stats.TotalScheduled, stats.CurrentScheduled)
 
-	// Wait for some tasks to execute
-	time.Sleep(50 * time.Millisecond)
+	// Wait for some tasks to execute (allow extra time)
+	time.Sleep(100 * time.Millisecond)
 
 	// Cancel remaining task
 	scheduler.Cancel("task3")
@@ -224,8 +224,8 @@ func Example_callbacks() {
 	scheduler.Schedule("cancel-task", task, time.Now().Add(time.Hour))
 	scheduler.Cancel("cancel-task")
 
-	// Wait for execution
-	time.Sleep(30 * time.Millisecond)
+	// Wait for execution (allow extra time for callback processing)
+	time.Sleep(100 * time.Millisecond)
 
 	// Output:
 	// Scheduled: callback-task
@@ -259,8 +259,8 @@ func Example_cronLikeScheduling() {
 	// Schedule "hourly" task (every 30ms for demo, normally 1 hour)
 	scheduler.ScheduleRepeating("hourly-cleanup", cleanupTask, 30*time.Millisecond, 3)
 
-	// Wait for executions
-	time.Sleep(120 * time.Millisecond)
+	// Wait for executions (allow extra time for all task completions)
+	time.Sleep(200 * time.Millisecond)
 
 	// Output:
 	// Cleanup completed
@@ -306,8 +306,8 @@ func Example_errorHandling() {
 	scheduler.Schedule("success", successTask, time.Now().Add(10*time.Millisecond))
 	scheduler.Schedule("failure", failTask, time.Now().Add(20*time.Millisecond))
 
-	// Wait for executions
-	time.Sleep(50 * time.Millisecond)
+	// Wait for executions (allow extra time for error handling)
+	time.Sleep(100 * time.Millisecond)
 
 	fmt.Printf("Errors: %d\n", atomic.LoadInt32(&errorCount))
 

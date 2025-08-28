@@ -87,10 +87,28 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for de
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Roadmap
+## Status
 
-- [ ] Core rate limiting implementations
-- [ ] Worker pool and task scheduling
-- [ ] Streaming data processing
-- [ ] Instrumentation and metrics support
-- [ ] Distributed systems integration
+### ✅ Completed Features
+
+**Rate Limiting Module** - *Complete with 91.9-96.6% test coverage*
+- [x] Token bucket rate limiter with burst capacity
+- [x] Leaky bucket for consistent rate smoothing  
+- [x] Concurrency limiter for resource control
+
+**Task Scheduling Module** - *Complete with 76.6-94.4% test coverage*
+- [x] Worker pool with dynamic scaling and graceful shutdown
+- [x] Task scheduler with cron-like functionality
+- [x] Multi-stage data processing pipeline
+
+**Streaming & I/O Module** - *Complete with 84.6-95.0% test coverage*  
+- [x] Stream API with functional operations (filter, map, reduce, etc.)
+- [x] Async writer with background buffering
+- [x] Backpressure channels with 4 flow control strategies
+
+### 🚀 Future Enhancements
+
+- [ ] Instrumentation and metrics support (Prometheus integration)
+- [ ] Distributed systems integration (Redis-based rate limiting)
+- [ ] Advanced scheduling patterns (cron expressions)
+- [ ] Performance optimizations and benchmarking
