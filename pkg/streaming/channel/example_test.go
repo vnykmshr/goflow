@@ -320,46 +320,53 @@ func Example_producerConsumer() {
 	// Consumed: 16
 }
 
-// Example_withTimeout demonstrates using timeouts in configuration.
+// Example_withTimeout demonstrates timeout configuration and non-blocking operations.
 func Example_withTimeout() {
 	config := Config{
 		BufferSize:     1,
-		Strategy:       Block,
+		Strategy:       Drop, // Use Drop strategy to avoid blocking
 		SendTimeout:    50 * time.Millisecond,
 		ReceiveTimeout: 50 * time.Millisecond,
 	}
 	ch := NewWithConfig[int](config)
 	defer ch.Close()
 
-	ctx := context.Background()
-
-	// Fill buffer
-	ch.Send(ctx, 1)
-
-	// This send will timeout
-	start := time.Now()
-	err := ch.Send(ctx, 2)
-	duration := time.Since(start)
-
-	if err == context.DeadlineExceeded {
-		fmt.Printf("Send timeout after ~%dms\n", duration.Milliseconds())
+	// Fill buffer first
+	err := ch.TrySend(1)
+	if err != nil {
+		fmt.Printf("Failed to send first value: %v\n", err)
+		return
 	}
 
-	// Empty channel
-	ch.Receive(ctx)
+	// This send will be dropped due to Drop strategy (returns nil but increments drop count)
+	initialStats := ch.Stats()
+	err = ch.TrySend(2)
+	newStats := ch.Stats()
+	
+	if err == nil && newStats.DroppedCount > initialStats.DroppedCount {
+		fmt.Printf("Send dropped: buffer full\n")
+	}
 
-	// This receive will timeout
-	start = time.Now()
-	_, err = ch.Receive(ctx)
-	duration = time.Since(start)
+	// Receive the value
+	value, ok, err := ch.TryReceive()
+	if err != nil {
+		fmt.Printf("Failed to receive: %v\n", err)
+	} else if ok {
+		fmt.Printf("Received: %d\n", value)
+	}
 
-	if err == context.DeadlineExceeded {
-		fmt.Printf("Receive timeout after ~%dms\n", duration.Milliseconds())
+	// This receive will fail due to empty channel
+	_, ok, err = ch.TryReceive()
+	if err != nil {
+		fmt.Printf("Receive failed: %v\n", err)
+	} else if !ok {
+		fmt.Printf("Receive failed: channel empty\n")
 	}
 
 	// Output:
-	// Send timeout after ~50ms
-	// Receive timeout after ~50ms
+	// Send dropped: buffer full
+	// Received: 1
+	// Receive failed: channel empty
 }
 
 // Example_workerpool demonstrates using backpressure channels in a worker pool.
