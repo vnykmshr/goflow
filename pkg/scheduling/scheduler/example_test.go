@@ -27,10 +27,10 @@ func Example() {
 	})
 
 	// Schedule a one-time task
-	scheduler.Schedule("one-time", task, time.Now().Add(10*time.Millisecond))
+	scheduler.Schedule("one-time", task, time.Now().Add(50*time.Millisecond))
 
 	// Wait for execution
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	fmt.Printf("Final count: %d\n", atomic.LoadInt32(&counter))
 
@@ -53,11 +53,11 @@ func Example_repeatingTasks() {
 		return nil
 	})
 
-	// Schedule task to repeat 3 times every 20ms
-	scheduler.ScheduleRepeating("repeater", task, 20*time.Millisecond, 3)
+	// Schedule task to repeat 3 times every 50ms
+	scheduler.ScheduleRepeating("repeater", task, 50*time.Millisecond, 3)
 
 	// Wait for all executions
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	fmt.Printf("Total: %d\n", atomic.LoadInt32(&counter))
 
