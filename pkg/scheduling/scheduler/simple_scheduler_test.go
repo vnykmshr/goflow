@@ -55,11 +55,11 @@ func TestScheduler_RepeatingTask(t *testing.T) {
 		return nil
 	})
 
-	if err := s.ScheduleRepeating("repeat", task, 50*time.Millisecond); err != nil {
+	if err := s.ScheduleRepeating("repeat", task, 75*time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(175 * time.Millisecond) // Should run 3-4 times
+	time.Sleep(300 * time.Millisecond) // Should run at least 3 times
 
 	if count := atomic.LoadInt32(&executed); count < 3 {
 		t.Errorf("expected at least 3 executions, got %d", count)

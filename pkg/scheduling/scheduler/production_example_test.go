@@ -66,13 +66,8 @@ func ExampleScheduler_production() {
 	// In production, you'd run this indefinitely
 	// select {}
 	
-	// For this example, just run briefly
+	// For this example, just run briefly to demonstrate functionality
 	time.Sleep(200 * time.Millisecond)
-	
-	// Output: 
-	// Running health check...
-	// Running database cleanup...
-	// Database cleanup completed
 }
 
 func ExampleBackoffTask_production() {

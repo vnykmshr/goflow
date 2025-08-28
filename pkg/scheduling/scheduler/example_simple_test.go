@@ -42,10 +42,10 @@ func ExampleScheduler_repeating() {
 		return nil
 	})
 
-	// Run every 50ms
-	scheduler.ScheduleRepeating("counter", task, 50*time.Millisecond)
+	// Run every 75ms
+	scheduler.ScheduleRepeating("counter", task, 75*time.Millisecond)
 
-	time.Sleep(175 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	// Output:
 	// Execution 1

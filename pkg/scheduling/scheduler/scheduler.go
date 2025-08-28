@@ -49,6 +49,20 @@ type BackoffTask struct {
 
 // Execute implements workerpool.Task with exponential backoff.
 func (bt BackoffTask) Execute(ctx context.Context) error {
+	// Validate configuration
+	if bt.Task == nil {
+		return fmt.Errorf("wrapped task cannot be nil")
+	}
+	if bt.MaxRetries < 0 {
+		return fmt.Errorf("max retries cannot be negative")
+	}
+	if bt.InitialDelay <= 0 {
+		bt.InitialDelay = 100 * time.Millisecond // reasonable default
+	}
+	if bt.MaxDelay <= 0 {
+		bt.MaxDelay = 30 * time.Second // reasonable default
+	}
+
 	var lastErr error
 	delay := bt.InitialDelay
 
@@ -79,10 +93,17 @@ func (bt BackoffTask) Execute(ctx context.Context) error {
 // Config holds scheduler configuration.
 type Config struct {
 	WorkerPool   workerpool.Pool
-	Location     *time.Location // For cron scheduling
-	TickInterval time.Duration  // How often to check for ready tasks (default: 50ms)
-	MaxTasks     int            // Maximum number of scheduled tasks (default: 10000)
+	Location     *time.Location
+	TickInterval time.Duration
+	MaxTasks     int
 }
+
+// Default values
+const (
+	defaultTickInterval = 50 * time.Millisecond
+	defaultMaxTasks     = 10000
+	maxTaskIDLength     = 255
+)
 
 type scheduledTask struct {
 	id           string
@@ -93,7 +114,6 @@ type scheduledTask struct {
 	created      time.Time
 }
 
-// scheduler is a clean, focused implementation.
 type scheduler struct {
 	pool         workerpool.Pool
 	ownPool      bool
@@ -116,49 +136,62 @@ func New() Scheduler {
 
 // NewWithConfig creates a scheduler with custom configuration.
 func NewWithConfig(cfg Config) Scheduler {
-	pool := cfg.WorkerPool
-	ownPool := false
-	if pool == nil {
-		pool = workerpool.New(4, 100)
-		ownPool = true
-	}
-
-	location := cfg.Location
-	if location == nil {
-		location = time.Local
-	}
-
-	tickInterval := cfg.TickInterval
-	if tickInterval <= 0 {
-		tickInterval = 50 * time.Millisecond // Reasonable default
-	}
-
-	maxTasks := cfg.MaxTasks
-	if maxTasks <= 0 {
-		maxTasks = 10000 // Reasonable default
-	}
-
-	return &scheduler{
-		pool:         pool,
-		ownPool:      ownPool,
-		location:     location,
-		tickInterval: tickInterval,
-		maxTasks:     maxTasks,
+	s := &scheduler{
+		pool:         cfg.WorkerPool,
+		location:     cfg.Location,
+		tickInterval: cfg.TickInterval,
+		maxTasks:     cfg.MaxTasks,
 		cronParser:   cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow),
 		tasks:        make(map[string]*scheduledTask),
 		done:         make(chan struct{}),
 	}
+
+	// Apply defaults
+	if s.pool == nil {
+		s.pool = workerpool.New(4, 100)
+		s.ownPool = true
+	}
+	if s.location == nil {
+		s.location = time.Local
+	}
+	if s.tickInterval <= 0 {
+		s.tickInterval = defaultTickInterval
+	}
+	if s.maxTasks <= 0 {
+		s.maxTasks = defaultMaxTasks
+	}
+
+	return s
 }
 
-func (s *scheduler) Schedule(id string, task workerpool.Task, runAt time.Time) error {
+// validateTaskRequest validates common task parameters.
+func (s *scheduler) validateTaskRequest(id string, task workerpool.Task) error {
 	if id == "" {
 		return fmt.Errorf("task ID cannot be empty")
 	}
-	if len(id) > 255 {
-		return fmt.Errorf("task ID too long (max 255 characters)")
+	if len(id) > maxTaskIDLength {
+		return fmt.Errorf("task ID too long (max %d characters)", maxTaskIDLength)
 	}
 	if task == nil {
 		return fmt.Errorf("task cannot be nil")
+	}
+	return nil
+}
+
+// checkTaskExists checks if a task already exists and if we're at capacity.
+func (s *scheduler) checkTaskExists(id string) error {
+	if _, exists := s.tasks[id]; exists {
+		return fmt.Errorf("task with ID %q already exists, use a different ID or cancel the existing task first", id)
+	}
+	if len(s.tasks) >= s.maxTasks {
+		return fmt.Errorf("cannot schedule task: maximum number of tasks (%d) reached", s.maxTasks)
+	}
+	return nil
+}
+
+func (s *scheduler) Schedule(id string, task workerpool.Task, runAt time.Time) error {
+	if err := s.validateTaskRequest(id, task); err != nil {
+		return err
 	}
 	if runAt.IsZero() {
 		return fmt.Errorf("task run time cannot be zero")
@@ -167,12 +200,8 @@ func (s *scheduler) Schedule(id string, task workerpool.Task, runAt time.Time) e
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.tasks[id]; exists {
-		return fmt.Errorf("task with ID %q already exists, use a different ID or cancel the existing task first", id)
-	}
-
-	if len(s.tasks) >= s.maxTasks {
-		return fmt.Errorf("cannot schedule task: maximum number of tasks (%d) reached", s.maxTasks)
+	if err := s.checkTaskExists(id); err != nil {
+		return err
 	}
 
 	s.tasks[id] = &scheduledTask{
@@ -190,14 +219,8 @@ func (s *scheduler) ScheduleAfter(id string, task workerpool.Task, delay time.Du
 }
 
 func (s *scheduler) ScheduleRepeating(id string, task workerpool.Task, interval time.Duration) error {
-	if id == "" {
-		return fmt.Errorf("task ID cannot be empty")
-	}
-	if len(id) > 255 {
-		return fmt.Errorf("task ID too long (max 255 characters)")
-	}
-	if task == nil {
-		return fmt.Errorf("task cannot be nil")
+	if err := s.validateTaskRequest(id, task); err != nil {
+		return err
 	}
 	if interval <= 0 {
 		return fmt.Errorf("interval must be positive, got %v", interval)
@@ -206,12 +229,8 @@ func (s *scheduler) ScheduleRepeating(id string, task workerpool.Task, interval 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.tasks[id]; exists {
-		return fmt.Errorf("task with ID %q already exists, use a different ID or cancel the existing task first", id)
-	}
-
-	if len(s.tasks) >= s.maxTasks {
-		return fmt.Errorf("cannot schedule task: maximum number of tasks (%d) reached", s.maxTasks)
+	if err := s.checkTaskExists(id); err != nil {
+		return err
 	}
 
 	s.tasks[id] = &scheduledTask{
@@ -226,14 +245,8 @@ func (s *scheduler) ScheduleRepeating(id string, task workerpool.Task, interval 
 }
 
 func (s *scheduler) ScheduleCron(id string, cronExpr string, task workerpool.Task) error {
-	if id == "" {
-		return fmt.Errorf("task ID cannot be empty")
-	}
-	if len(id) > 255 {
-		return fmt.Errorf("task ID too long (max 255 characters)")
-	}
-	if task == nil {
-		return fmt.Errorf("task cannot be nil")
+	if err := s.validateTaskRequest(id, task); err != nil {
+		return err
 	}
 	if cronExpr == "" {
 		return fmt.Errorf("cron expression cannot be empty")
@@ -247,12 +260,8 @@ func (s *scheduler) ScheduleCron(id string, cronExpr string, task workerpool.Tas
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.tasks[id]; exists {
-		return fmt.Errorf("task with ID %q already exists, use a different ID or cancel the existing task first", id)
-	}
-
-	if len(s.tasks) >= s.maxTasks {
-		return fmt.Errorf("cannot schedule task: maximum number of tasks (%d) reached", s.maxTasks)
+	if err := s.checkTaskExists(id); err != nil {
+		return err
 	}
 
 	now := time.Now().In(s.location)
@@ -349,10 +358,6 @@ func (s *scheduler) run() {
 		if s.ticker != nil {
 			s.ticker.Stop()
 		}
-		if r := recover(); r != nil {
-			// Log the panic but don't crash the scheduler
-			// In production you'd want to log this properly
-		}
 	}()
 
 	for {
@@ -360,51 +365,74 @@ func (s *scheduler) run() {
 		case <-s.done:
 			return
 		case <-s.ticker.C:
-			// Protect against panics in task processing
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						// Task processing panicked, but continue running
-					}
-				}()
-				s.processReadyTasks()
-			}()
+			s.safeProcessTasks()
 		}
 	}
+}
+
+// safeProcessTasks processes ready tasks with panic recovery.
+func (s *scheduler) safeProcessTasks() {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log panic but continue running scheduler
+			// In production, you'd want proper logging here
+		}
+	}()
+	s.processReadyTasks()
 }
 
 func (s *scheduler) processReadyTasks() {
 	now := time.Now()
 	
 	s.mu.Lock()
-	if len(s.tasks) == 0 {
-		s.mu.Unlock()
-		return // Quick exit if no tasks
-	}
-	
-	readyTasks := make([]*scheduledTask, 0, len(s.tasks)) // Pre-allocate
-	
-	for id, task := range s.tasks {
-		if now.After(task.runAt) || now.Equal(task.runAt) {
-			readyTasks = append(readyTasks, task)
-			
-			// Handle rescheduling
-			if task.interval > 0 {
-				// Repeating task
-				task.runAt = now.Add(task.interval)
-			} else if task.cronSchedule != nil {
-				// Cron task
-				task.runAt = task.cronSchedule.Next(now.In(s.location))
-			} else {
-				// One-time task
-				delete(s.tasks, id)
-			}
-		}
-	}
+	readyTasks := s.findReadyTasks(now)
 	s.mu.Unlock()
 
-	// Execute ready tasks
-	for _, task := range readyTasks {
+	// Execute ready tasks outside the lock
+	s.submitTasks(readyTasks)
+}
+
+// findReadyTasks finds and reschedules ready tasks (must be called with lock held).
+func (s *scheduler) findReadyTasks(now time.Time) []*scheduledTask {
+	if len(s.tasks) == 0 {
+		return nil
+	}
+	
+	readyTasks := make([]*scheduledTask, 0, len(s.tasks))
+	
+	for id, task := range s.tasks {
+		if s.isTaskReady(task, now) {
+			readyTasks = append(readyTasks, task)
+			s.rescheduleOrRemoveTask(id, task, now)
+		}
+	}
+	
+	return readyTasks
+}
+
+// isTaskReady checks if a task is ready to execute.
+func (s *scheduler) isTaskReady(task *scheduledTask, now time.Time) bool {
+	return now.After(task.runAt) || now.Equal(task.runAt)
+}
+
+// rescheduleOrRemoveTask handles task rescheduling or removal.
+func (s *scheduler) rescheduleOrRemoveTask(id string, task *scheduledTask, now time.Time) {
+	switch {
+	case task.interval > 0:
+		// Repeating task
+		task.runAt = now.Add(task.interval)
+	case task.cronSchedule != nil:
+		// Cron task
+		task.runAt = task.cronSchedule.Next(now.In(s.location))
+	default:
+		// One-time task
+		delete(s.tasks, id)
+	}
+}
+
+// submitTasks submits tasks to the worker pool.
+func (s *scheduler) submitTasks(tasks []*scheduledTask) {
+	for _, task := range tasks {
 		if err := s.pool.Submit(task.task); err != nil {
 			// Task submission failed, but continue processing other tasks
 			continue
