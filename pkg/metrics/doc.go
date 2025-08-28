@@ -18,10 +18,10 @@
 //
 //	// Rate limiter with metrics
 //	limiter := bucket.NewWithMetrics(10, 20, "api_requests")
-//	
+//
 //	// Worker pool with metrics
 //	pool := workerpool.NewWithMetrics(5, "task_pool")
-//	
+//
 //	// Scheduler with metrics
 //	scheduler := scheduler.NewWithMetrics("job_scheduler")
 //
@@ -39,7 +39,7 @@
 //		Enabled:  true,
 //		Registry: registry,
 //	}
-//	
+//
 //	limiter := bucket.NewWithConfigAndMetrics(
 //		bucket.Config{Rate: 5, Burst: 10},
 //		"custom_limiter",
@@ -51,7 +51,7 @@
 // ## Rate Limiting Metrics
 //
 //   - goflow_ratelimit_requests_total: Total number of rate limit requests
-//   - goflow_ratelimit_allowed_total: Total number of allowed requests  
+//   - goflow_ratelimit_allowed_total: Total number of allowed requests
 //   - goflow_ratelimit_denied_total: Total number of denied requests
 //   - goflow_ratelimit_wait_duration_seconds: Time spent waiting for rate limit approval
 //   - goflow_ratelimit_tokens_available: Number of tokens currently available
@@ -105,7 +105,7 @@
 //	config := metrics.Config{
 //		Enabled:   true,                           // Enable/disable metrics
 //		Registry:  prometheus.DefaultRegisterer,   // Custom registry
-//		Namespace: "myapp",                        // Override default "goflow" 
+//		Namespace: "myapp",                        // Override default "goflow"
 //		Labels:    prometheus.Labels{"version": "1.0"}, // Additional labels
 //	}
 //
@@ -130,7 +130,7 @@
 //
 // See the example tests for comprehensive usage patterns:
 //   - Example_comprehensiveMetrics: All components together
-//   - Example_customRegistry: Using custom Prometheus registries  
+//   - Example_customRegistry: Using custom Prometheus registries
 //   - Example_metricsServer: Setting up HTTP metrics endpoint
 //   - Example_metricsLifecycle: Runtime enable/disable patterns
 package metrics

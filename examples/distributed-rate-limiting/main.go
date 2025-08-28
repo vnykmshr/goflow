@@ -45,7 +45,7 @@ func main() {
 
 	// Run all demonstrations
 	demonstrateBasicDistributedLimiting(rdb)
-	demonstrateMultipleInstances(rdb) 
+	demonstrateMultipleInstances(rdb)
 	demonstrateStrategies(rdb)
 	demonstrateFallback()
 	demonstrateLoadTesting(rdb)
@@ -119,7 +119,7 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 	for i := 0; i < 3; i++ {
 		config := baseConfig
 		config.InstanceID = fmt.Sprintf("instance-%d", i+1)
-		
+
 		limiter, err := distributed.NewLimiter(distributed.TokenBucket, config)
 		if err != nil {
 			log.Fatalf("Failed to create limiter %d: %v", i+1, err)
@@ -134,13 +134,13 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 	// All instances try to make requests simultaneously
 	var wg sync.WaitGroup
 	results := make([][]bool, 3)
-	
+
 	for i, limiter := range limiters {
 		wg.Add(1)
 		go func(instanceID int, lim distributed.DistributedLimiter) {
 			defer wg.Done()
 			results[instanceID] = make([]bool, 6)
-			
+
 			for j := 0; j < 6; j++ {
 				results[instanceID][j] = lim.Allow(ctx)
 				time.Sleep(50 * time.Millisecond)
@@ -199,7 +199,7 @@ func demonstrateStrategies(rdb *redis.Client) {
 
 	for _, s := range strategies {
 		fmt.Printf("\nTesting %s:\n", s.name)
-		
+
 		config := distributed.Config{
 			Redis:      rdb,
 			Key:        "demo:" + s.name,
@@ -260,9 +260,9 @@ func demonstrateFallback() {
 
 	config := distributed.Config{
 		Redis:           rdb,
-		Key:            "demo:fallback",
-		Rate:           5.0,
-		Burst:          10,
+		Key:             "demo:fallback",
+		Rate:            5.0,
+		Burst:           10,
 		FallbackToLocal: true,
 		LocalLimiter:    localLimiter,
 	}
@@ -318,13 +318,13 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 	defer limiter.Close()
 
 	ctx := context.Background()
-	
+
 	// Concurrent load test
 	const numWorkers = 10
 	const requestsPerWorker = 20
-	
+
 	fmt.Printf("Load test: %d workers, %d requests each\n", numWorkers, requestsPerWorker)
-	
+
 	start := time.Now()
 	var wg sync.WaitGroup
 	totalAllowed := int64(0)
@@ -335,13 +335,13 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 		go func(workerID int) {
 			defer wg.Done()
 			allowed := 0
-			
+
 			for j := 0; j < requestsPerWorker; j++ {
 				if limiter.Allow(ctx) {
 					allowed++
 				}
 			}
-			
+
 			mu.Lock()
 			totalAllowed += int64(allowed)
 			mu.Unlock()
@@ -351,9 +351,9 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 	wg.Wait()
 	elapsed := time.Since(start)
 
-	fmt.Printf("Results: %d/%d requests allowed in %v\n", 
+	fmt.Printf("Results: %d/%d requests allowed in %v\n",
 		totalAllowed, numWorkers*requestsPerWorker, elapsed)
-	fmt.Printf("Throughput: %.1f req/sec\n", 
+	fmt.Printf("Throughput: %.1f req/sec\n",
 		float64(numWorkers*requestsPerWorker)/elapsed.Seconds())
 
 	// Final stats
@@ -406,7 +406,7 @@ func runHTTPServer() {
 
 		// Simulate API work
 		time.Sleep(100 * time.Millisecond)
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"message": "Hello from %s!", "timestamp": "%s"}`,
 			config.InstanceID, time.Now().Format(time.RFC3339))
@@ -429,7 +429,7 @@ func runHTTPServer() {
 	"allowed_requests": %d,
 	"denied_requests": %d,
 	"active_instances": %d
-}`, stats.Rate, stats.Burst, stats.Tokens, stats.TotalRequests, 
+}`, stats.Rate, stats.Burst, stats.Tokens, stats.TotalRequests,
 			stats.AllowedRequests, stats.DeniedRequests, len(stats.ActiveInstances))
 	})
 
@@ -442,7 +442,7 @@ func runHTTPServer() {
 
 	fmt.Printf("Server starting on port %s\n", port)
 	fmt.Printf("Instance ID: %s\n", config.InstanceID)
-	fmt.Printf("Rate limit: %.1f req/sec (burst %d) - SHARED across all instances\n", 
+	fmt.Printf("Rate limit: %.1f req/sec (burst %d) - SHARED across all instances\n",
 		config.Rate, config.Burst)
 	fmt.Println()
 	fmt.Printf("Try: curl http://localhost:%s/api\n", port)

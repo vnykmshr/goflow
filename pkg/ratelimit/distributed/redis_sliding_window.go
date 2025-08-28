@@ -13,10 +13,10 @@ import (
 type redisSlidingWindow struct {
 	config Config
 	keys   map[string]string
-	
+
 	// Lua script for atomic sliding window operations
 	checkAndIncrementScript *redis.Script
-	cleanupScript          *redis.Script
+	cleanupScript           *redis.Script
 }
 
 // newRedisSlidingWindow creates a new Redis-based sliding window rate limiter.
@@ -44,27 +44,27 @@ func (rsw *redisSlidingWindow) initialize(ctx context.Context) error {
 	defer cancel()
 
 	pipe := rsw.config.Redis.Pipeline()
-	
+
 	// Store configuration
 	pipe.HSet(ctx, rsw.keys["config"], map[string]interface{}{
-		"rate":  rsw.config.Rate,
-		"burst": rsw.config.Burst,
-		"window_size": int64(time.Second.Nanoseconds()), // 1-second sliding window
+		"rate":        rsw.config.Rate,
+		"burst":       rsw.config.Burst,
+		"window_size": time.Second.Nanoseconds(), // 1-second sliding window
 	})
 	pipe.Expire(ctx, rsw.keys["config"], rsw.config.KeyTTL)
-	
+
 	// Initialize stats
 	pipe.HSet(ctx, rsw.keys["stats"], map[string]interface{}{
-		"total_requests": 0,
+		"total_requests":   0,
 		"allowed_requests": 0,
-		"denied_requests": 0,
+		"denied_requests":  0,
 	})
 	pipe.Expire(ctx, rsw.keys["stats"], rsw.config.KeyTTL)
-	
+
 	// Register this instance
 	pipe.SAdd(ctx, rsw.keys["instances"], rsw.config.InstanceID)
 	pipe.Expire(ctx, rsw.keys["instances"], rsw.config.KeyTTL)
-	
+
 	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return &RedisError{"initialize", err}
@@ -88,12 +88,12 @@ func (rsw *redisSlidingWindow) AllowN(ctx context.Context, n int) bool {
 	defer cancel()
 
 	now := time.Now().UnixNano()
-	windowStart := now - int64(time.Second.Nanoseconds()) // 1-second window
+	windowStart := now - time.Second.Nanoseconds() // 1-second window
 
 	result, err := rsw.checkAndIncrementScript.Run(ctx, rsw.config.Redis, []string{
 		rsw.keys["tokens"], // Use tokens key as the sliding window counter key
 		rsw.keys["stats"],
-	}, 
+	},
 		now,
 		windowStart,
 		n,
@@ -211,16 +211,16 @@ func (rsw *redisSlidingWindow) Stats(ctx context.Context) (*Stats, error) {
 	defer cancel()
 
 	pipe := rsw.config.Redis.Pipeline()
-	
+
 	configCmd := pipe.HGetAll(ctx, rsw.keys["config"])
 	instancesCmd := pipe.SMembers(ctx, rsw.keys["instances"])
 	statsCmd := pipe.HGetAll(ctx, rsw.keys["stats"])
-	
+
 	// Get current window count
 	now := time.Now().UnixNano()
-	windowStart := now - int64(time.Second.Nanoseconds())
-	windowCountCmd := pipe.ZCount(ctx, rsw.keys["tokens"], 
-		strconv.FormatInt(windowStart, 10), 
+	windowStart := now - time.Second.Nanoseconds()
+	windowCountCmd := pipe.ZCount(ctx, rsw.keys["tokens"],
+		strconv.FormatInt(windowStart, 10),
 		strconv.FormatInt(now, 10))
 
 	_, err := pipe.Exec(ctx)
@@ -233,12 +233,12 @@ func (rsw *redisSlidingWindow) Stats(ctx context.Context) (*Stats, error) {
 	burst, _ := strconv.Atoi(configMap["burst"])
 
 	instances := instancesCmd.Val()
-	
+
 	statsMap := statsCmd.Val()
 	totalRequests, _ := strconv.ParseInt(statsMap["total_requests"], 10, 64)
 	allowedRequests, _ := strconv.ParseInt(statsMap["allowed_requests"], 10, 64)
 	deniedRequests, _ := strconv.ParseInt(statsMap["denied_requests"], 10, 64)
-	
+
 	windowCount := float64(windowCountCmd.Val())
 
 	return &Stats{

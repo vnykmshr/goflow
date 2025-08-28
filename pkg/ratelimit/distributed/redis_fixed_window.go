@@ -13,7 +13,7 @@ import (
 type redisFixedWindow struct {
 	config Config
 	keys   map[string]string
-	
+
 	// Lua script for atomic fixed window operations
 	checkAndIncrementScript *redis.Script
 }
@@ -42,27 +42,27 @@ func (rfw *redisFixedWindow) initialize(ctx context.Context) error {
 	defer cancel()
 
 	pipe := rfw.config.Redis.Pipeline()
-	
-	// Store configuration  
+
+	// Store configuration
 	pipe.HSet(ctx, rfw.keys["config"], map[string]interface{}{
-		"rate":  rfw.config.Rate,
-		"burst": rfw.config.Burst,
-		"window_duration": int64(time.Second.Nanoseconds()), // 1-second windows
+		"rate":            rfw.config.Rate,
+		"burst":           rfw.config.Burst,
+		"window_duration": time.Second.Nanoseconds(), // 1-second windows
 	})
 	pipe.Expire(ctx, rfw.keys["config"], rfw.config.KeyTTL)
-	
+
 	// Initialize stats
 	pipe.HSet(ctx, rfw.keys["stats"], map[string]interface{}{
-		"total_requests": 0,
-		"allowed_requests": 0, 
-		"denied_requests": 0,
+		"total_requests":   0,
+		"allowed_requests": 0,
+		"denied_requests":  0,
 	})
 	pipe.Expire(ctx, rfw.keys["stats"], rfw.config.KeyTTL)
-	
+
 	// Register this instance
 	pipe.SAdd(ctx, rfw.keys["instances"], rfw.config.InstanceID)
 	pipe.Expire(ctx, rfw.keys["instances"], rfw.config.KeyTTL)
-	
+
 	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return &RedisError{"initialize", err}
@@ -98,9 +98,9 @@ func (rfw *redisFixedWindow) AllowN(ctx context.Context, n int) bool {
 	result, err := rfw.checkAndIncrementScript.Run(ctx, rfw.config.Redis, []string{
 		windowKey,
 		rfw.keys["stats"],
-	}, 
+	},
 		n,
-		int64(rfw.config.Rate), // Max requests per window
+		int64(rfw.config.Rate),     // Max requests per window
 		int(time.Second.Seconds()), // Window TTL
 	).Result()
 
@@ -218,11 +218,11 @@ func (rfw *redisFixedWindow) Stats(ctx context.Context) (*Stats, error) {
 	defer cancel()
 
 	pipe := rfw.config.Redis.Pipeline()
-	
+
 	configCmd := pipe.HGetAll(ctx, rfw.keys["config"])
 	instancesCmd := pipe.SMembers(ctx, rfw.keys["instances"])
 	statsCmd := pipe.HGetAll(ctx, rfw.keys["stats"])
-	
+
 	// Get current window count
 	now := time.Now()
 	windowKey := rfw.getWindowKey(now)
@@ -238,12 +238,12 @@ func (rfw *redisFixedWindow) Stats(ctx context.Context) (*Stats, error) {
 	burst, _ := strconv.Atoi(configMap["burst"])
 
 	instances := instancesCmd.Val()
-	
+
 	statsMap := statsCmd.Val()
 	totalRequests, _ := strconv.ParseInt(statsMap["total_requests"], 10, 64)
 	allowedRequests, _ := strconv.ParseInt(statsMap["allowed_requests"], 10, 64)
 	deniedRequests, _ := strconv.ParseInt(statsMap["denied_requests"], 10, 64)
-	
+
 	currentWindowCount, _ := strconv.ParseFloat(currentWindowCmd.Val(), 64)
 	remainingCapacity := rate - currentWindowCount
 
@@ -251,7 +251,7 @@ func (rfw *redisFixedWindow) Stats(ctx context.Context) (*Stats, error) {
 		Rate:            rate,
 		Burst:           burst,
 		Tokens:          maxFloat(0, remainingCapacity), // Remaining capacity in current window
-		LastRefill:      now.Truncate(time.Second), // Window start time
+		LastRefill:      now.Truncate(time.Second),      // Window start time
 		TotalRequests:   totalRequests,
 		AllowedRequests: allowedRequests,
 		DeniedRequests:  deniedRequests,

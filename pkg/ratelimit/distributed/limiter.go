@@ -43,20 +43,20 @@ type DistributedLimiter interface {
 
 // Reservation holds information about a distributed rate limiting reservation.
 type Reservation struct {
-	OK          bool
-	Delay       time.Duration
-	Tokens      int
-	AllowedAt   time.Time
-	InstanceID  string
+	OK         bool
+	Delay      time.Duration
+	Tokens     int
+	AllowedAt  time.Time
+	InstanceID string
 }
 
 // Stats holds distributed rate limiter statistics.
 type Stats struct {
-	Rate         float64
-	Burst        int
-	Tokens       float64
-	LastRefill   time.Time
-	TotalRequests int64
+	Rate            float64
+	Burst           int
+	Tokens          float64
+	LastRefill      time.Time
+	TotalRequests   int64
 	AllowedRequests int64
 	DeniedRequests  int64
 	ActiveInstances []string
@@ -103,10 +103,10 @@ type Config struct {
 // DefaultConfig returns a default distributed rate limiter configuration.
 func DefaultConfig() Config {
 	return Config{
-		InstanceID:       generateInstanceID(),
-		FallbackToLocal:  true,
-		RedisTimeout:     500 * time.Millisecond,
-		RefreshInterval:  100 * time.Millisecond,
+		InstanceID:      generateInstanceID(),
+		FallbackToLocal: true,
+		RedisTimeout:    500 * time.Millisecond,
+		RefreshInterval: 100 * time.Millisecond,
 		KeyTTL:          time.Hour,
 	}
 }
@@ -117,33 +117,47 @@ type Strategy int
 const (
 	// TokenBucket uses a distributed token bucket algorithm
 	TokenBucket Strategy = iota
-	
+
 	// SlidingWindow uses a distributed sliding window counter
 	SlidingWindow
-	
+
 	// FixedWindow uses distributed fixed window counters
 	FixedWindow
 )
 
 // NewLimiter creates a new distributed rate limiter with the specified strategy.
 func NewLimiter(strategy Strategy, config Config) (DistributedLimiter, error) {
+	if err := validateConfig(config); err != nil {
+		return nil, err
+	}
+
+	config = applyConfigDefaults(config)
+
+	return createLimiterByStrategy(strategy, config)
+}
+
+// validateConfig validates the limiter configuration.
+func validateConfig(config Config) error {
 	if config.Redis == nil {
-		return nil, &ConfigError{"redis client is required"}
+		return &ConfigError{"redis client is required"}
 	}
 	if config.Key == "" {
-		return nil, &ConfigError{"key is required"}
+		return &ConfigError{"key is required"}
 	}
 	if config.Rate <= 0 {
-		return nil, &ConfigError{"rate must be positive"}
+		return &ConfigError{"rate must be positive"}
 	}
 	if config.Burst <= 0 {
-		return nil, &ConfigError{"burst must be positive"}
+		return &ConfigError{"burst must be positive"}
 	}
+	return nil
+}
+
+// applyConfigDefaults sets default values for unspecified config fields.
+func applyConfigDefaults(config Config) Config {
 	if config.InstanceID == "" {
 		config.InstanceID = generateInstanceID()
 	}
-	
-	// Set defaults
 	if config.RedisTimeout == 0 {
 		config.RedisTimeout = 500 * time.Millisecond
 	}
@@ -153,7 +167,11 @@ func NewLimiter(strategy Strategy, config Config) (DistributedLimiter, error) {
 	if config.KeyTTL == 0 {
 		config.KeyTTL = time.Hour
 	}
+	return config
+}
 
+// createLimiterByStrategy creates the appropriate limiter implementation.
+func createLimiterByStrategy(strategy Strategy, config Config) (DistributedLimiter, error) {
 	switch strategy {
 	case TokenBucket:
 		return newRedisTokenBucket(config)

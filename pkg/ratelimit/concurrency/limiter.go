@@ -3,6 +3,8 @@ package concurrency
 import (
 	"context"
 	"sync"
+
+	"github.com/vnykmshr/goflow/pkg/common/errors"
 )
 
 // Limiter controls the number of concurrent operations that can happen
@@ -76,8 +78,41 @@ type waiter struct {
 	cancel <-chan struct{} // context cancellation channel
 }
 
+// NewSafe creates a new concurrency limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create concurrency limiters for production use.
+func NewSafe(capacity int) (Limiter, error) {
+	return NewWithConfigSafe(Config{
+		Capacity:         capacity,
+		InitialAvailable: -1, // Use capacity as default
+	})
+}
+
+// NewWithConfigSafe creates a new concurrency limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create concurrency limiters for production use.
+func NewWithConfigSafe(config Config) (Limiter, error) {
+	if config.Capacity <= 0 {
+		return nil, errors.NewValidationError("concurrency", "capacity", config.Capacity, "capacity must be positive").
+			WithHint("capacity determines how many concurrent operations are allowed")
+	}
+
+	initialAvailable := config.InitialAvailable
+	if config.InitialAvailable < 0 || config.InitialAvailable > config.Capacity {
+		initialAvailable = config.Capacity
+	}
+
+	return &concurrencyLimiter{
+		capacity:  config.Capacity,
+		available: initialAvailable,
+		inUse:     config.Capacity - initialAvailable,
+		waiters:   make([]waiter, 0),
+	}, nil
+}
+
 // New creates a new concurrency limiter with the specified capacity.
 // All permits start available.
+//
+// Deprecated: Use NewSafe for better error handling in production code.
+// This function panics on invalid configuration for backward compatibility.
 func New(capacity int) Limiter {
 	return NewWithConfig(Config{
 		Capacity:         capacity,
@@ -86,6 +121,9 @@ func New(capacity int) Limiter {
 }
 
 // NewWithConfig creates a new concurrency limiter with the specified configuration.
+//
+// Deprecated: Use NewWithConfigSafe for better error handling in production code.
+// This function panics on invalid configuration for backward compatibility.
 func NewWithConfig(config Config) Limiter {
 	if config.Capacity <= 0 {
 		panic("capacity must be positive")

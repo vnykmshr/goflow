@@ -24,7 +24,7 @@ func NewWithMetrics(capacity int, name string) Limiter {
 		Enabled:  true,
 		Registry: registry,
 	}
-	
+
 	return NewWithConfigAndMetrics(Config{
 		Capacity:         capacity,
 		InitialAvailable: -1,
@@ -34,7 +34,7 @@ func NewWithMetrics(capacity int, name string) Limiter {
 // NewWithConfigAndMetrics creates a new concurrency limiter with custom config and metrics.
 func NewWithConfigAndMetrics(config Config, name string, metricsConfig metrics.Config) Limiter {
 	baseLimiter := NewWithConfig(config)
-	
+
 	if !metricsConfig.Enabled {
 		return baseLimiter
 	}
@@ -54,7 +54,7 @@ func NewWithConfigAndMetrics(config Config, name string, metricsConfig metrics.C
 
 	// Initialize metrics
 	ml.updateMetrics()
-	
+
 	return ml
 }
 
@@ -63,7 +63,7 @@ func (ml *MetricsLimiter) updateMetrics() {
 	if !ml.enabled {
 		return
 	}
-	
+
 	ml.registry.ConcurrencyActive.WithLabelValues(ml.name).Set(float64(ml.limiter.InUse()))
 	ml.registry.ConcurrencyWaiting.WithLabelValues(ml.name).Set(0) // Updated when waiting
 }
@@ -76,11 +76,11 @@ func (ml *MetricsLimiter) Acquire() bool {
 // AcquireN attempts to acquire n permits without blocking.
 func (ml *MetricsLimiter) AcquireN(n int) bool {
 	acquired := ml.limiter.AcquireN(n)
-	
+
 	if ml.enabled {
 		ml.updateMetrics()
 	}
-	
+
 	return acquired
 }
 
@@ -92,25 +92,25 @@ func (ml *MetricsLimiter) Wait(ctx context.Context) error {
 // WaitN blocks until n permits are available.
 func (ml *MetricsLimiter) WaitN(ctx context.Context, n int) error {
 	start := time.Now()
-	
+
 	if ml.enabled {
 		// Increment waiting count
 		ml.registry.ConcurrencyWaiting.WithLabelValues(ml.name).Inc()
 	}
-	
+
 	err := ml.limiter.WaitN(ctx, n)
-	
+
 	if ml.enabled {
 		// Decrement waiting count
 		ml.registry.ConcurrencyWaiting.WithLabelValues(ml.name).Dec()
-		
+
 		// Record wait duration
 		duration := time.Since(start)
 		ml.registry.RateLimitWaitTime.WithLabelValues("concurrency", ml.name).Observe(duration.Seconds())
-		
+
 		ml.updateMetrics()
 	}
-	
+
 	return err
 }
 
@@ -122,7 +122,7 @@ func (ml *MetricsLimiter) Release() {
 // ReleaseN releases n permits back to the limiter.
 func (ml *MetricsLimiter) ReleaseN(n int) {
 	ml.limiter.ReleaseN(n)
-	
+
 	if ml.enabled {
 		ml.updateMetrics()
 	}
@@ -131,7 +131,7 @@ func (ml *MetricsLimiter) ReleaseN(n int) {
 // SetCapacity changes the maximum number of concurrent operations allowed.
 func (ml *MetricsLimiter) SetCapacity(capacity int) {
 	ml.limiter.SetCapacity(capacity)
-	
+
 	if ml.enabled {
 		ml.updateMetrics()
 	}
@@ -150,26 +150,26 @@ func (ml *MetricsLimiter) Available() int {
 // InUse returns the number of permits currently in use.
 func (ml *MetricsLimiter) InUse() int {
 	inUse := ml.limiter.InUse()
-	
+
 	if ml.enabled {
 		ml.registry.ConcurrencyActive.WithLabelValues(ml.name).Set(float64(inUse))
 	}
-	
+
 	return inUse
 }
 
 // EnableMetrics enables metrics collection.
 func (ml *MetricsLimiter) EnableMetrics(config metrics.Config) error {
 	ml.enabled = config.Enabled
-	
+
 	if config.Registry != nil {
 		ml.registry = metrics.NewRegistry(config.Registry)
 	}
-	
+
 	if ml.enabled {
 		ml.updateMetrics()
 	}
-	
+
 	return nil
 }
 

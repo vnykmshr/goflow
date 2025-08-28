@@ -5,6 +5,8 @@ import (
 	"math"
 	"sync"
 	"time"
+
+	"github.com/vnykmshr/goflow/pkg/common/errors"
 )
 
 // Limit represents the maximum frequency of events per unit time.
@@ -154,8 +156,51 @@ type tokenBucket struct {
 	clock      Clock
 }
 
+// NewSafe creates a new rate limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create rate limiters for production use.
+func NewSafe(rate Limit, burst int) (Limiter, error) {
+	return NewWithConfigSafe(Config{
+		Rate:          rate,
+		Burst:         burst,
+		Clock:         SystemClock{},
+		InitialTokens: -1, // Start with full capacity
+	})
+}
+
+// NewWithConfigSafe creates a new rate limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create rate limiters for production use.
+func NewWithConfigSafe(config Config) (Limiter, error) {
+	if config.Rate < 0 {
+		return nil, errors.NewValidationError("bucket", "rate", config.Rate, "rate cannot be negative").
+			WithHint("use 0 for no rate limit or a positive value")
+	}
+	if config.Burst <= 0 {
+		return nil, errors.NewValidationError("bucket", "burst", config.Burst, "burst must be positive").
+			WithHint("burst determines how many tokens can be consumed instantly")
+	}
+	if config.Clock == nil {
+		config.Clock = SystemClock{}
+	}
+
+	initialTokens := float64(config.InitialTokens)
+	if config.InitialTokens < 0 {
+		initialTokens = float64(config.Burst)
+	}
+
+	return &tokenBucket{
+		limit:      config.Rate,
+		burst:      config.Burst,
+		tokens:     initialTokens,
+		lastUpdate: config.Clock.Now(),
+		clock:      config.Clock,
+	}, nil
+}
+
 // New creates a new rate limiter with the specified rate and burst capacity.
 // The limiter starts with a full bucket of tokens.
+//
+// Deprecated: Use NewSafe for better error handling in production code.
+// This function panics on invalid configuration for backward compatibility.
 func New(rate Limit, burst int) Limiter {
 	return NewWithConfig(Config{
 		Rate:          rate,
@@ -166,6 +211,9 @@ func New(rate Limit, burst int) Limiter {
 }
 
 // NewWithConfig creates a new rate limiter with the specified configuration.
+//
+// Deprecated: Use NewWithConfigSafe for better error handling in production code.
+// This function panics on invalid configuration for backward compatibility.
 func NewWithConfig(config Config) Limiter {
 	if config.Rate < 0 {
 		panic("rate must not be negative")

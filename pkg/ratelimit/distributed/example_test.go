@@ -98,7 +98,7 @@ func Example_multipleInstances() {
 	defer limiter1.Close()
 
 	// Instance 2
-	config2 := baseConfig  
+	config2 := baseConfig
 	config2.InstanceID = "instance_2"
 	limiter2, err := NewLimiter(TokenBucket, config2)
 	if err != nil {
@@ -112,10 +112,10 @@ func Example_multipleInstances() {
 	for i := 0; i < 8; i++ {
 		allowed1 := limiter1.Allow(ctx)
 		allowed2 := limiter2.Allow(ctx)
-		
-		fmt.Printf("Round %d - Instance1: %v, Instance2: %v\n", 
+
+		fmt.Printf("Round %d - Instance1: %v, Instance2: %v\n",
 			i+1, allowed1, allowed2)
-		
+
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -143,9 +143,9 @@ func Example_fallbackToLocal() {
 
 	config := Config{
 		Redis:           rdb,
-		Key:            "test_limiter",
-		Rate:           10.0,
-		Burst:          20,
+		Key:             "test_limiter",
+		Rate:            10.0,
+		Burst:           20,
 		FallbackToLocal: true,
 		LocalLimiter:    localLimiter,
 	}
@@ -156,7 +156,7 @@ func Example_fallbackToLocal() {
 		// In practice, you might handle this differently
 		fmt.Printf("Failed to create distributed limiter: %v\n", err)
 		fmt.Println("Using local limiter fallback")
-		
+
 		for i := 0; i < 8; i++ {
 			if localLimiter.Allow() {
 				fmt.Printf("Local request %d: Allowed\n", i+1)
@@ -169,7 +169,7 @@ func Example_fallbackToLocal() {
 	defer limiter.Close()
 
 	ctx := context.Background()
-	
+
 	// Test requests - these should fallback to local limiter
 	fmt.Println("Testing with fallback (requests will use local limiter):")
 	for i := 0; i < 8; i++ {
@@ -184,7 +184,7 @@ func Example_fallbackToLocal() {
 // Example_slidingWindow demonstrates sliding window rate limiting.
 func Example_slidingWindow() {
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379", 
+		Addr: "localhost:6379",
 		DB:   1,
 	})
 	defer rdb.Close()
@@ -218,7 +218,7 @@ func Example_slidingWindow() {
 		} else {
 			fmt.Printf("Request %d: Denied\n", i+1)
 		}
-		
+
 		// Wait between requests to demonstrate sliding window
 		if i == 4 {
 			fmt.Println("Waiting 1 second...")
@@ -248,7 +248,7 @@ func Example_fixedWindow() {
 
 	config := Config{
 		Redis:      rdb,
-		Key:        "fixed_window_limiter", 
+		Key:        "fixed_window_limiter",
 		Rate:       4.0, // 4 requests per second window
 		Burst:      4,
 		InstanceID: "fixed_example",
@@ -269,7 +269,7 @@ func Example_fixedWindow() {
 		} else {
 			fmt.Printf("Request %d: Denied\n", i+1)
 		}
-		
+
 		// Wait after 5th request to enter new window
 		if i == 4 {
 			fmt.Println("Waiting for new window...")
@@ -322,18 +322,18 @@ func Example_waitAndReserve() {
 	// Try to reserve - should show delay needed
 	reservation, err := limiter.Reserve(ctx, 1)
 	if err == nil {
-		fmt.Printf("Reservation: OK=%v, Delay=%v\n", 
+		fmt.Printf("Reservation: OK=%v, Delay=%v\n",
 			reservation.OK, reservation.Delay)
 	}
 
 	// Wait for a request (with timeout)
 	waitCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	
+
 	start := time.Now()
 	err = limiter.Wait(waitCtx)
 	elapsed := time.Since(start)
-	
+
 	if err == nil {
 		fmt.Printf("Wait succeeded after %v\n", elapsed)
 	} else {

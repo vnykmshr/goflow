@@ -3,18 +3,27 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vnykmshr/goflow/pkg/metrics"
 )
 
 // Example_metricsBasic demonstrates basic metrics collection for token bucket rate limiter.
 func Example_metricsBasic() {
+	// Create a separate registry to avoid conflicts
+	customRegistry := prometheus.NewRegistry()
+	metricsConfig := metrics.Config{
+		Enabled:  true,
+		Registry: customRegistry,
+	}
+
 	// Create a rate limiter with metrics (5 tokens per second, burst of 10)
-	limiter := NewWithMetrics(5, 10, "api_requests")
+	limiter := NewWithConfigAndMetrics(Config{
+		Rate:          5,
+		Burst:         10,
+		InitialTokens: -1, // Start with full capacity
+	}, "api_requests", metricsConfig)
 
 	ctx := context.Background()
 
@@ -29,7 +38,7 @@ func Example_metricsBasic() {
 
 	// Wait for some tokens to refill
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Try one more request
 	err := limiter.Wait(ctx)
 	if err == nil {
@@ -62,7 +71,7 @@ func Example_metricsBasic() {
 func Example_metricsCustomRegistry() {
 	// Create custom registry
 	customRegistry := prometheus.NewRegistry()
-	
+
 	metricsConfig := metrics.Config{
 		Enabled:  true,
 		Registry: customRegistry,
@@ -80,13 +89,13 @@ func Example_metricsCustomRegistry() {
 
 	// Test various operations
 	fmt.Printf("Initial tokens: %.0f\n", limiter.Tokens())
-	
+
 	// Allow operations
 	fmt.Printf("Allow(): %v\n", limiter.Allow())
 	fmt.Printf("Allow(): %v\n", limiter.Allow())
 	fmt.Printf("Allow(): %v\n", limiter.Allow())
 	fmt.Printf("Allow(): %v\n", limiter.Allow()) // Should be denied
-	
+
 	// Wait operation (should timeout due to context)
 	err := limiter.Wait(ctx)
 	if err != nil {
@@ -107,14 +116,25 @@ func Example_metricsCustomRegistry() {
 
 // Example_metricsHTTPServer demonstrates exposing metrics via HTTP.
 func Example_metricsHTTPServer() {
-	// Create rate limiter with metrics
-	limiter := NewWithMetrics(10, 20, "http_requests")
+	// Create a separate registry to avoid conflicts
+	customRegistry := prometheus.NewRegistry()
+	metricsConfig := metrics.Config{
+		Enabled:  true,
+		Registry: customRegistry,
+	}
 
-	// Simulate API requests
+	// Create rate limiter with custom metrics registry  
+	limiter := NewWithConfigAndMetrics(Config{
+		Rate:          10,
+		Burst:         20,
+		InitialTokens: -1, // Start with full capacity
+	}, "http_requests", metricsConfig)
+
+	// Simulate API requests - ensure deterministic output
+	allowed := 0
 	for i := 0; i < 25; i++ {
 		if limiter.Allow() {
-			// Simulate successful request processing
-			time.Sleep(1 * time.Millisecond)
+			allowed++
 		}
 	}
 
@@ -125,11 +145,11 @@ func Example_metricsHTTPServer() {
 	//
 	// This would expose metrics at http://localhost:8080/metrics
 
-	fmt.Printf("Tokens remaining: %.1f\n", limiter.Tokens())
+	fmt.Printf("Allowed %d out of 25 requests\n", allowed)
 	fmt.Println("Metrics server would be available at /metrics endpoint")
 
 	// Output:
-	// Tokens remaining: 0.0
+	// Allowed 20 out of 25 requests
 	// Metrics server would be available at /metrics endpoint
 }
 
@@ -140,15 +160,21 @@ func Example_metricsConfiguration() {
 		Enabled: false,
 	}
 	limiterDisabled := NewWithConfigAndMetrics(Config{
-		Rate:  5,
-		Burst: 10,
+		Rate:          5,
+		Burst:         10,
+		InitialTokens: -1, // Start with full capacity
 	}, "disabled_limiter", disabledConfig)
 
-	// Limiter with metrics enabled (default)
-	enabledConfig := metrics.DefaultConfig()
+	// Limiter with metrics enabled with separate registry
+	customRegistry := prometheus.NewRegistry()
+	enabledConfig := metrics.Config{
+		Enabled:  true,
+		Registry: customRegistry,
+	}
 	limiterEnabled := NewWithConfigAndMetrics(Config{
-		Rate:  5, 
-		Burst: 10,
+		Rate:          5,
+		Burst:         10,
+		InitialTokens: -1, // Start with full capacity
 	}, "enabled_limiter", enabledConfig)
 
 	// Test both limiters
@@ -159,7 +185,7 @@ func Example_metricsConfiguration() {
 	if ml, ok := limiterEnabled.(*MetricsLimiter); ok {
 		fmt.Printf("Enabled limiter has metrics: %v\n", ml.MetricsEnabled())
 	}
-	
+
 	if ml, ok := limiterDisabled.(*MetricsLimiter); ok {
 		fmt.Printf("Disabled limiter has metrics: %v\n", ml.MetricsEnabled())
 	} else {
@@ -168,17 +194,7 @@ func Example_metricsConfiguration() {
 
 	// Output:
 	// Disabled limiter allows: true
-	// Enabled limiter allows: true  
+	// Enabled limiter allows: true
 	// Enabled limiter has metrics: true
 	// Disabled limiter has metrics: false
-}
-
-// startMetricsServer starts a basic HTTP server for metrics (helper for examples).
-func startMetricsServer(port string) {
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		if err := http.ListenAndServe(port, nil); err != nil {
-			fmt.Printf("Metrics server failed: %v\n", err)
-		}
-	}()
 }

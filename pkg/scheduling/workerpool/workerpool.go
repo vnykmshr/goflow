@@ -29,7 +29,6 @@ func (p *workerPool) Submit(task Task) error {
 	}
 }
 
-
 // Results returns a channel of task results.
 func (p *workerPool) Results() <-chan Result {
 	return p.resultQueue

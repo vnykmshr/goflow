@@ -9,13 +9,13 @@ import (
 // Registry holds all metric instances for goflow components.
 type Registry struct {
 	// Rate Limiting Metrics
-	RateLimitRequests     *prometheus.CounterVec
-	RateLimitAllowed      *prometheus.CounterVec
-	RateLimitDenied       *prometheus.CounterVec
-	RateLimitWaitTime     *prometheus.HistogramVec
-	RateLimitTokens       *prometheus.GaugeVec
-	ConcurrencyActive     *prometheus.GaugeVec
-	ConcurrencyWaiting    *prometheus.GaugeVec
+	RateLimitRequests  *prometheus.CounterVec
+	RateLimitAllowed   *prometheus.CounterVec
+	RateLimitDenied    *prometheus.CounterVec
+	RateLimitWaitTime  *prometheus.HistogramVec
+	RateLimitTokens    *prometheus.GaugeVec
+	ConcurrencyActive  *prometheus.GaugeVec
+	ConcurrencyWaiting *prometheus.GaugeVec
 
 	// Task Scheduling Metrics
 	TasksScheduled        *prometheus.CounterVec
@@ -27,15 +27,15 @@ type Registry struct {
 	WorkerPoolActive      *prometheus.GaugeVec
 	WorkerPoolQueued      *prometheus.GaugeVec
 
-	// Streaming Metrics  
-	StreamOperations      *prometheus.CounterVec
-	StreamItems           *prometheus.CounterVec
-	StreamErrors          *prometheus.CounterVec
-	StreamBufferSize      *prometheus.GaugeVec
-	StreamBufferUsage     *prometheus.GaugeVec
-	BackpressureEvents    *prometheus.CounterVec
-	WriterFlushes         *prometheus.CounterVec
-	WriterBytesWritten    *prometheus.CounterVec
+	// Streaming Metrics
+	StreamOperations   *prometheus.CounterVec
+	StreamItems        *prometheus.CounterVec
+	StreamErrors       *prometheus.CounterVec
+	StreamBufferSize   *prometheus.GaugeVec
+	StreamBufferUsage  *prometheus.GaugeVec
+	BackpressureEvents *prometheus.CounterVec
+	WriterFlushes      *prometheus.CounterVec
+	WriterBytesWritten *prometheus.CounterVec
 }
 
 // DefaultRegistry is the default metrics registry used by goflow components.
@@ -64,7 +64,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 		RateLimitAllowed: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: "goflow",
-				Subsystem: "ratelimit", 
+				Subsystem: "ratelimit",
 				Name:      "allowed_total",
 				Help:      "Total number of allowed requests",
 			},
@@ -75,7 +75,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 			prometheus.CounterOpts{
 				Namespace: "goflow",
 				Subsystem: "ratelimit",
-				Name:      "denied_total", 
+				Name:      "denied_total",
 				Help:      "Total number of denied requests",
 			},
 			[]string{"limiter_type", "limiter_name"},
@@ -114,7 +114,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 
 		ConcurrencyWaiting: factory.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Namespace: "goflow", 
+				Namespace: "goflow",
 				Subsystem: "concurrency",
 				Name:      "waiting",
 				Help:      "Number of operations waiting for concurrency slot",
@@ -136,7 +136,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 		TasksExecuted: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: "goflow",
-				Subsystem: "scheduler", 
+				Subsystem: "scheduler",
 				Name:      "tasks_executed_total",
 				Help:      "Total number of tasks executed",
 			},
@@ -147,7 +147,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 			prometheus.CounterOpts{
 				Namespace: "goflow",
 				Subsystem: "scheduler",
-				Name:      "tasks_completed_total", 
+				Name:      "tasks_completed_total",
 				Help:      "Total number of tasks completed successfully",
 			},
 			[]string{"scheduler_name"},
@@ -197,7 +197,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 		WorkerPoolQueued: factory.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: "goflow",
-				Subsystem: "workerpool", 
+				Subsystem: "workerpool",
 				Name:      "queued_tasks",
 				Help:      "Number of queued tasks",
 			},
@@ -228,7 +228,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 		StreamErrors: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: "goflow",
-				Subsystem: "stream", 
+				Subsystem: "stream",
 				Name:      "errors_total",
 				Help:      "Total number of stream processing errors",
 			},
@@ -267,7 +267,7 @@ func NewRegistry(reg prometheus.Registerer) *Registry {
 
 		WriterFlushes: factory.NewCounterVec(
 			prometheus.CounterOpts{
-				Namespace: "goflow", 
+				Namespace: "goflow",
 				Subsystem: "writer",
 				Name:      "flushes_total",
 				Help:      "Total number of writer flushes",

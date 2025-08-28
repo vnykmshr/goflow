@@ -10,10 +10,10 @@ import (
 
 // MetricsLimiter wraps a Limiter with Prometheus metrics collection.
 type MetricsLimiter struct {
-	limiter   Limiter
-	name      string
-	registry  *metrics.Registry
-	enabled   bool
+	limiter  Limiter
+	name     string
+	registry *metrics.Registry
+	enabled  bool
 }
 
 // NewWithMetrics creates a new token bucket limiter with metrics enabled.
@@ -24,7 +24,7 @@ func NewWithMetrics(rate Limit, burst int, name string) Limiter {
 		Enabled:  true,
 		Registry: registry,
 	}
-	
+
 	return NewWithConfigAndMetrics(Config{
 		Rate:          rate,
 		Burst:         burst,
@@ -36,7 +36,7 @@ func NewWithMetrics(rate Limit, burst int, name string) Limiter {
 // NewWithConfigAndMetrics creates a new token bucket limiter with custom config and metrics.
 func NewWithConfigAndMetrics(config Config, name string, metricsConfig metrics.Config) Limiter {
 	baseLimiter := NewWithConfig(config)
-	
+
 	if !metricsConfig.Enabled {
 		return baseLimiter
 	}
@@ -67,14 +67,14 @@ func (ml *MetricsLimiter) AllowN(n int) bool {
 	}
 
 	allowed := ml.limiter.AllowN(n)
-	
+
 	if ml.enabled {
 		if allowed {
 			ml.registry.RateLimitAllowed.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		} else {
 			ml.registry.RateLimitDenied.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		}
-		
+
 		// Update current token count
 		ml.registry.RateLimitTokens.WithLabelValues("token_bucket", ml.name).Set(ml.limiter.Tokens())
 	}
@@ -90,23 +90,23 @@ func (ml *MetricsLimiter) Wait(ctx context.Context) error {
 // WaitN blocks until n events can happen.
 func (ml *MetricsLimiter) WaitN(ctx context.Context, n int) error {
 	start := time.Now()
-	
+
 	if ml.enabled {
 		ml.registry.RateLimitRequests.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 	}
 
 	err := ml.limiter.WaitN(ctx, n)
-	
+
 	if ml.enabled {
 		duration := time.Since(start)
 		ml.registry.RateLimitWaitTime.WithLabelValues("token_bucket", ml.name).Observe(duration.Seconds())
-		
+
 		if err == nil {
 			ml.registry.RateLimitAllowed.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		} else {
 			ml.registry.RateLimitDenied.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		}
-		
+
 		// Update current token count
 		ml.registry.RateLimitTokens.WithLabelValues("token_bucket", ml.name).Set(ml.limiter.Tokens())
 	}
@@ -126,14 +126,14 @@ func (ml *MetricsLimiter) ReserveN(n int) *Reservation {
 	}
 
 	reservation := ml.limiter.ReserveN(n)
-	
+
 	if ml.enabled {
 		if reservation.OK() {
 			ml.registry.RateLimitAllowed.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		} else {
 			ml.registry.RateLimitDenied.WithLabelValues("token_bucket", ml.name).Add(float64(n))
 		}
-		
+
 		// Update current token count
 		ml.registry.RateLimitTokens.WithLabelValues("token_bucket", ml.name).Set(ml.limiter.Tokens())
 	}
@@ -164,22 +164,22 @@ func (ml *MetricsLimiter) Burst() int {
 // Tokens returns the number of tokens currently available.
 func (ml *MetricsLimiter) Tokens() float64 {
 	tokens := ml.limiter.Tokens()
-	
+
 	if ml.enabled {
 		ml.registry.RateLimitTokens.WithLabelValues("token_bucket", ml.name).Set(tokens)
 	}
-	
+
 	return tokens
 }
 
 // EnableMetrics enables metrics collection.
 func (ml *MetricsLimiter) EnableMetrics(config metrics.Config) error {
 	ml.enabled = config.Enabled
-	
+
 	if config.Registry != nil {
 		ml.registry = metrics.NewRegistry(config.Registry)
 	}
-	
+
 	return nil
 }
 

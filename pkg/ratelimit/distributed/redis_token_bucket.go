@@ -13,7 +13,7 @@ import (
 type redisTokenBucket struct {
 	config Config
 	keys   map[string]string
-	
+
 	// Lua script for atomic token bucket operations
 	tryConsumeScript *redis.Script
 	refillScript     *redis.Script
@@ -29,7 +29,7 @@ func newRedisTokenBucket(config Config) (DistributedLimiter, error) {
 
 	// Initialize Lua scripts for atomic operations
 	rtb.tryConsumeScript = redis.NewScript(luaTryConsume)
-	rtb.refillScript = redis.NewScript(luaRefill)  
+	rtb.refillScript = redis.NewScript(luaRefill)
 	rtb.statsScript = redis.NewScript(luaStats)
 
 	// Initialize the bucket in Redis
@@ -46,22 +46,22 @@ func (rtb *redisTokenBucket) initialize(ctx context.Context) error {
 	defer cancel()
 
 	pipe := rtb.config.Redis.Pipeline()
-	
+
 	// Set initial values if they don't exist
 	pipe.SetNX(ctx, rtb.keys["tokens"], float64(rtb.config.Burst), rtb.config.KeyTTL)
 	pipe.SetNX(ctx, rtb.keys["last"], timeToFloat(time.Now()), rtb.config.KeyTTL)
-	
+
 	// Store configuration
 	pipe.HSet(ctx, rtb.keys["config"], map[string]interface{}{
 		"rate":  rtb.config.Rate,
 		"burst": rtb.config.Burst,
 	})
 	pipe.Expire(ctx, rtb.keys["config"], rtb.config.KeyTTL)
-	
+
 	// Register this instance
 	pipe.SAdd(ctx, rtb.keys["instances"], rtb.config.InstanceID)
 	pipe.Expire(ctx, rtb.keys["instances"], rtb.config.KeyTTL)
-	
+
 	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return &RedisError{"initialize", err}
@@ -146,11 +146,11 @@ func (rtb *redisTokenBucket) Reserve(ctx context.Context, n int) (*Reservation, 
 		rtb.keys["tokens"],
 		rtb.keys["last"],
 		rtb.keys["config"],
-	}, 
-		n,                           // tokens requested
-		timeToFloat(now),           // current time
-		rtb.config.Rate,            // refill rate
-		rtb.config.Burst,           // max capacity
+	},
+		n,                // tokens requested
+		timeToFloat(now), // current time
+		rtb.config.Rate,  // refill rate
+		rtb.config.Burst, // max capacity
 	).Result()
 
 	if err != nil {
@@ -223,7 +223,7 @@ func (rtb *redisTokenBucket) Stats(ctx context.Context) (*Stats, error) {
 	defer cancel()
 
 	pipe := rtb.config.Redis.Pipeline()
-	
+
 	tokensCmd := pipe.Get(ctx, rtb.keys["tokens"])
 	lastCmd := pipe.Get(ctx, rtb.keys["last"])
 	configCmd := pipe.HGetAll(ctx, rtb.keys["config"])
@@ -248,7 +248,7 @@ func (rtb *redisTokenBucket) Stats(ctx context.Context) (*Stats, error) {
 	burst, _ := strconv.Atoi(configMap["burst"])
 
 	instances := instancesCmd.Val()
-	
+
 	statsMap := statsCmd.Val()
 	totalRequests, _ := strconv.ParseInt(statsMap["total_requests"], 10, 64)
 	allowedRequests, _ := strconv.ParseInt(statsMap["allowed_requests"], 10, 64)

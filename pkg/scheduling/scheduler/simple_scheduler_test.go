@@ -149,7 +149,7 @@ func TestBackoffTask(t *testing.T) {
 
 	ctx := context.Background()
 	err := backoffTask.Execute(ctx)
-	
+
 	if err != nil {
 		t.Errorf("expected task to succeed after retries, got error: %v", err)
 	}
@@ -197,4 +197,3 @@ func TestScheduler_InputValidation(t *testing.T) {
 		})
 	}
 }
-

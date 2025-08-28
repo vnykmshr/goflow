@@ -33,10 +33,10 @@ func DefaultConfig() Config {
 type Instrumentable interface {
 	// EnableMetrics enables metrics collection for this component.
 	EnableMetrics(config Config) error
-	
+
 	// DisableMetrics disables metrics collection for this component.
 	DisableMetrics()
-	
+
 	// MetricsEnabled returns true if metrics are currently enabled.
 	MetricsEnabled() bool
 }

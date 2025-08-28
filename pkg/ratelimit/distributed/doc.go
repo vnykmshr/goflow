@@ -9,7 +9,7 @@
 // The distributed package implements three rate limiting strategies:
 //
 //   - TokenBucket: Distributed token bucket allowing burst traffic
-//   - SlidingWindow: Smooth rate limiting with sliding time windows  
+//   - SlidingWindow: Smooth rate limiting with sliding time windows
 //   - FixedWindow: Simple fixed time window counters
 //
 // All strategies use Redis for coordination and provide fallback to local rate limiting
@@ -20,7 +20,7 @@
 // Basic distributed rate limiting:
 //
 //	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-//	
+//
 //	config := distributed.Config{
 //		Redis:      rdb,
 //		Key:        "api_limiter",
@@ -28,13 +28,13 @@
 //		Burst:      200,   // burst up to 200
 //		InstanceID: "server-1",
 //	}
-//	
+//
 //	limiter, err := distributed.NewLimiter(distributed.TokenBucket, config)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //	defer limiter.Close()
-//	
+//
 //	ctx := context.Background()
 //	if limiter.Allow(ctx) {
 //		// Process request
@@ -48,12 +48,12 @@
 //	config1 := config
 //	config1.InstanceID = "server-1"
 //	limiter1, _ := distributed.NewLimiter(distributed.TokenBucket, config1)
-//	
-//	// Instance 2 
+//
+//	// Instance 2
 //	config2 := config
 //	config2.InstanceID = "server-2"
 //	limiter2, _ := distributed.NewLimiter(distributed.TokenBucket, config2)
-//	
+//
 //	// Both instances share the same global rate limit
 //
 // # Fallback Strategy
@@ -61,10 +61,10 @@
 // Enable local fallback when Redis is unavailable:
 //
 //	localLimiter := bucket.New(bucket.Limit(100), 200)
-//	
+//
 //	config := distributed.Config{
 //		Redis:           rdb,
-//		Key:            "api_limiter", 
+//		Key:            "api_limiter",
 //		Rate:           100.0,
 //		Burst:          200,
 //		FallbackToLocal: true,
@@ -78,7 +78,7 @@
 // The token bucket strategy allows for burst traffic while maintaining an average rate:
 //
 //	limiter, _ := distributed.NewLimiter(distributed.TokenBucket, config)
-//	
+//
 //	// Allows bursts up to 'Burst' size, then sustains 'Rate' requests/second
 //
 // Features:
@@ -92,7 +92,7 @@
 // The sliding window strategy provides smooth rate limiting without fixed window boundaries:
 //
 //	limiter, _ := distributed.NewLimiter(distributed.SlidingWindow, config)
-//	
+//
 //	// Maintains exactly 'Rate' requests per second over any 1-second period
 //
 // Features:
@@ -106,7 +106,7 @@
 // The fixed window strategy uses discrete time windows for simple rate limiting:
 //
 //	limiter, _ := distributed.NewLimiter(distributed.FixedWindow, config)
-//	
+//
 //	// Allows 'Rate' requests per fixed 1-second window
 //
 // Features:
@@ -140,7 +140,7 @@
 //	if limiter.Allow(ctx) {
 //		// Request allowed
 //	}
-//	
+//
 //	// Check for N requests
 //	if limiter.AllowN(ctx, 5) {
 //		// 5 requests allowed
@@ -153,7 +153,7 @@
 //	if err == nil {
 //		// Request now allowed
 //	}
-//	
+//
 //	// Wait for N requests
 //	err := limiter.WaitN(ctx, 3)
 //
@@ -172,10 +172,10 @@
 //
 //	// Change rate limit across all instances
 //	limiter.SetRate(ctx, 150.0)
-//	
+//
 //	// Change burst capacity
 //	limiter.SetBurst(ctx, 300)
-//	
+//
 //	// Get current statistics
 //	stats, err := limiter.Stats(ctx)
 //	if err == nil {
@@ -199,11 +199,11 @@
 //	if err != nil {
 //		var configErr *distributed.ConfigError
 //		var redisErr *distributed.RedisError
-//		
+//
 //		switch {
 //		case errors.As(err, &configErr):
 //			// Configuration error
-//		case errors.As(err, &redisErr):  
+//		case errors.As(err, &redisErr):
 //			// Redis operation error - may fall back to local limiter
 //		default:
 //			// Other error
