@@ -49,18 +49,8 @@ type BackoffTask struct {
 
 // Execute implements workerpool.Task with exponential backoff.
 func (bt BackoffTask) Execute(ctx context.Context) error {
-	// Validate configuration
-	if bt.Task == nil {
-		return fmt.Errorf("wrapped task cannot be nil")
-	}
-	if bt.MaxRetries < 0 {
-		return fmt.Errorf("max retries cannot be negative")
-	}
-	if bt.InitialDelay <= 0 {
-		bt.InitialDelay = 100 * time.Millisecond // reasonable default
-	}
-	if bt.MaxDelay <= 0 {
-		bt.MaxDelay = 30 * time.Second // reasonable default
+	if err := bt.validate(); err != nil {
+		return err
 	}
 
 	var lastErr error
@@ -88,6 +78,23 @@ func (bt BackoffTask) Execute(ctx context.Context) error {
 	}
 
 	return lastErr
+}
+
+// validate checks and sets defaults for BackoffTask configuration.
+func (bt *BackoffTask) validate() error {
+	if bt.Task == nil {
+		return fmt.Errorf("wrapped task cannot be nil")
+	}
+	if bt.MaxRetries < 0 {
+		return fmt.Errorf("max retries cannot be negative")
+	}
+	if bt.InitialDelay <= 0 {
+		bt.InitialDelay = 100 * time.Millisecond // reasonable default
+	}
+	if bt.MaxDelay <= 0 {
+		bt.MaxDelay = 30 * time.Second // reasonable default
+	}
+	return nil
 }
 
 // Config holds scheduler configuration.
@@ -326,7 +333,7 @@ func (s *scheduler) Start() error {
 
 	s.running = true
 	s.ticker = time.NewTicker(s.tickInterval)
-	
+
 	go s.run()
 	return nil
 }
@@ -376,6 +383,7 @@ func (s *scheduler) safeProcessTasks() {
 		if r := recover(); r != nil {
 			// Log panic but continue running scheduler
 			// In production, you'd want proper logging here
+			_ = r // Acknowledge we're intentionally ignoring the panic value
 		}
 	}()
 	s.processReadyTasks()
@@ -383,7 +391,7 @@ func (s *scheduler) safeProcessTasks() {
 
 func (s *scheduler) processReadyTasks() {
 	now := time.Now()
-	
+
 	s.mu.Lock()
 	readyTasks := s.findReadyTasks(now)
 	s.mu.Unlock()
@@ -397,16 +405,16 @@ func (s *scheduler) findReadyTasks(now time.Time) []*scheduledTask {
 	if len(s.tasks) == 0 {
 		return nil
 	}
-	
+
 	readyTasks := make([]*scheduledTask, 0, len(s.tasks))
-	
+
 	for id, task := range s.tasks {
 		if s.isTaskReady(task, now) {
 			readyTasks = append(readyTasks, task)
 			s.rescheduleOrRemoveTask(id, task, now)
 		}
 	}
-	
+
 	return readyTasks
 }
 

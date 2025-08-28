@@ -132,5 +132,5 @@ func ExampleScheduler_webServerTasks() {
 	scheduler.ScheduleRepeating("metrics", metricsTask, 5*time.Minute)
 
 	// In a real server, you'd run indefinitely
-	// select {} 
+	// select {}
 }

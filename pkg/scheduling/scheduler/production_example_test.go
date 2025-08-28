@@ -15,10 +15,10 @@ func ExampleScheduler_production() {
 		TickInterval: 100 * time.Millisecond, // Check every 100ms
 		MaxTasks:     1000,                   // Limit to 1000 concurrent tasks
 	}
-	
+
 	scheduler := NewWithConfig(config)
 	defer func() { <-scheduler.Stop() }()
-	
+
 	scheduler.Start()
 
 	// Example: Database cleanup task
@@ -65,7 +65,7 @@ func ExampleScheduler_production() {
 
 	// In production, you'd run this indefinitely
 	// select {}
-	
+
 	// For this example, just run briefly to demonstrate functionality
 	time.Sleep(200 * time.Millisecond)
 }

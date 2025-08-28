@@ -140,7 +140,7 @@ func TestWorkerPool_Stats(t *testing.T) {
 	})
 
 	pool.Submit(task)
-	
+
 	// Just verify basic functionality works
 	time.Sleep(50 * time.Millisecond)
 }
@@ -186,9 +186,9 @@ func TestWorkerPool_PanicRecovery(t *testing.T) {
 }
 
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || 
-		(len(s) > len(substr) && 
-			(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
+	return len(s) >= len(substr) && (s == substr ||
+		(len(s) > len(substr) &&
+			(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
 				func() bool {
 					for i := 0; i <= len(s)-len(substr); i++ {
 						if s[i:i+len(substr)] == substr {
