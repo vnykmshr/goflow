@@ -342,7 +342,7 @@ func Example_withTimeout() {
 	initialStats := ch.Stats()
 	err = ch.TrySend(2)
 	newStats := ch.Stats()
-	
+
 	if err == nil && newStats.DroppedCount > initialStats.DroppedCount {
 		fmt.Printf("Send dropped: buffer full\n")
 	}
