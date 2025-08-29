@@ -220,10 +220,11 @@ go get github.com/vnykmshr/goflow
 
 ## Documentation & Examples
 
-- [📖 Getting Started Guide](./GETTING_STARTED.md) - Comprehensive guide for new users
+- [📖 Getting Started Guide](./docs/GETTING_STARTED.md) - Comprehensive guide for new users
 - [🏗️ Production Web Service Example](./examples/web-service/main.go) - Complete integration example
 - [📚 API Documentation](https://pkg.go.dev/github.com/vnykmshr/goflow) - Complete API reference
 - [🎯 Examples](./examples/) - Focused examples for each module
+- [🛠️ Decision Guide](./docs/DECISION_GUIDE.md) - Help choosing the right components
 
 ## Contributing
 
