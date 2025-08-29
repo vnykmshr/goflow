@@ -1,6 +1,13 @@
-# Binaries
+# Binaries and build artifacts
 *.exe
 **/examples/**/[^.]*
 !**/examples/**/*.go
 !**/examples/**/*.md
 !**/examples/**/*.txt
+
+# Coverage reports
+coverage.out
+coverage.html
+
+# Development artifacts  
+todos/
