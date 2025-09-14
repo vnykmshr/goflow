@@ -99,7 +99,9 @@ func demonstrateBasicDistributedLimiting(rdb *redis.Client) {
 	}
 
 	// Clean up
-	limiter.Reset(ctx)
+	if err := limiter.Reset(ctx); err != nil {
+		fmt.Printf("Warning: Failed to reset limiter: %v\n", err)
+	}
 }
 
 // demonstrateMultipleInstances shows multiple instances sharing a rate limit.
@@ -178,7 +180,9 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 	}
 
 	// Clean up
-	limiters[0].Reset(ctx)
+	if err := limiters[0].Reset(ctx); err != nil {
+		fmt.Printf("Warning: Failed to reset limiter: %v\n", err)
+	}
 }
 
 // demonstrateStrategies compares different rate limiting strategies.
@@ -238,8 +242,12 @@ func demonstrateStrategies(rdb *redis.Client) {
 		}
 		fmt.Println()
 
-		limiter.Close()
-		limiter.Reset(ctx)
+		if err := limiter.Close(); err != nil {
+			fmt.Printf("Warning: Failed to close limiter: %v\n", err)
+		}
+		if err := limiter.Reset(ctx); err != nil {
+			fmt.Printf("Warning: Failed to reset limiter: %v\n", err)
+		}
 	}
 }
 
@@ -363,7 +371,9 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 			stats.TotalRequests, stats.AllowedRequests, stats.DeniedRequests)
 	}
 
-	limiter.Reset(ctx)
+	if err := limiter.Reset(ctx); err != nil {
+		fmt.Printf("Warning: Failed to reset limiter: %v\n", err)
+	}
 }
 
 // runHTTPServer runs a simple HTTP server with distributed rate limiting.
@@ -452,5 +462,11 @@ func runHTTPServer() {
 	fmt.Printf("PORT=8081 go run main.go server\n")
 	fmt.Printf("PORT=8082 go run main.go server\n")
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	server := &http.Server{
+		Addr:         ":" + port,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+	log.Fatal(server.ListenAndServe())
 }

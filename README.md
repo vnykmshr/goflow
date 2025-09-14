@@ -3,8 +3,9 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/vnykmshr/goflow.svg)](https://pkg.go.dev/github.com/vnykmshr/goflow)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vnykmshr/goflow)](https://goreportcard.com/report/github.com/vnykmshr/goflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-90%2B-brightgreen.svg)]()
+[![CI](https://github.com/vnykmshr/goflow/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/goflow/actions/workflows/ci.yml)
+[![Security](https://github.com/vnykmshr/goflow/actions/workflows/security.yml/badge.svg)](https://github.com/vnykmshr/goflow/actions/workflows/security.yml)
+[![codecov](https://codecov.io/gh/vnykmshr/goflow/branch/main/graph/badge.svg)](https://codecov.io/gh/vnykmshr/goflow)
 [![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
 
 A production-ready, comprehensive Go library for building robust concurrent applications with rate limiting, scheduling, streaming, and pipeline processing. Features excellent developer experience with helpful error messages, comprehensive documentation, and real-world integration examples.

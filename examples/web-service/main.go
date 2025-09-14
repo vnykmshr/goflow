@@ -348,7 +348,9 @@ func (ws *WebService) Start(ctx context.Context) error {
 	}
 
 	// Start task scheduler
-	ws.taskScheduler.Start()
+	if err := ws.taskScheduler.Start(); err != nil {
+		return fmt.Errorf("failed to start task scheduler: %w", err)
+	}
 
 	// Start HTTP server
 	go func() {
