@@ -5,7 +5,23 @@ All notable changes to goflow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.0] - 2025-01-XX
+## [v1.0.1] - 2025-01-16
+
+### Changed
+- **BREAKING**: Removed deprecated `New()` and `NewWithConfig()` functions from rate limiters
+- Updated all internal usage to safe constructors (`NewSafe`, `NewWithConfigSafe`)
+- Enhanced error handling in metrics integration
+- Updated benchmark tests to use safe constructors
+
+### Added
+- Comprehensive CONTRIBUTING.md with development guidelines
+- Complete CHANGELOG.md following Keep a Changelog format
+
+### Improved
+- Production safety by eliminating panic paths in constructors
+- Error propagation and handling across components
+
+## [v1.0.0] - 2025-01-16
 
 ### Added
 - Production-ready rate limiting with token bucket and leaky bucket implementations
@@ -31,4 +47,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting: Sub-microsecond decisions
 - Worker pools: >100K tasks/second throughput
 
+[v1.0.1]: https://github.com/vnykmshr/goflow/releases/tag/v1.0.1
 [v1.0.0]: https://github.com/vnykmshr/goflow/releases/tag/v1.0.0
