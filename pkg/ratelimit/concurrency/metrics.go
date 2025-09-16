@@ -34,7 +34,10 @@ func NewWithMetrics(capacity int, name string) Limiter {
 
 // NewWithConfigAndMetrics creates a new concurrency limiter with custom config and metrics.
 func NewWithConfigAndMetrics(config Config, name string, metricsConfig metrics.Config) Limiter {
-	baseLimiter := NewWithConfig(config)
+	baseLimiter, err := NewWithConfigSafe(config)
+	if err != nil {
+		panic("invalid concurrency limiter configuration: " + err.Error())
+	}
 
 	if !metricsConfig.Enabled {
 		return baseLimiter

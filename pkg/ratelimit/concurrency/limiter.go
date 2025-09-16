@@ -108,36 +108,3 @@ func NewWithConfigSafe(config Config) (Limiter, error) {
 	}, nil
 }
 
-// New creates a new concurrency limiter with the specified capacity.
-// All permits start available.
-//
-// Deprecated: Use NewSafe for better error handling in production code.
-// This function panics on invalid configuration for backward compatibility.
-func New(capacity int) Limiter {
-	return NewWithConfig(Config{
-		Capacity:         capacity,
-		InitialAvailable: -1, // Use capacity as default
-	})
-}
-
-// NewWithConfig creates a new concurrency limiter with the specified configuration.
-//
-// Deprecated: Use NewWithConfigSafe for better error handling in production code.
-// This function panics on invalid configuration for backward compatibility.
-func NewWithConfig(config Config) Limiter {
-	if config.Capacity <= 0 {
-		panic("capacity must be positive")
-	}
-
-	initialAvailable := config.InitialAvailable
-	if config.InitialAvailable < 0 || config.InitialAvailable > config.Capacity {
-		initialAvailable = config.Capacity
-	}
-
-	return &concurrencyLimiter{
-		capacity:  config.Capacity,
-		available: initialAvailable,
-		inUse:     config.Capacity - initialAvailable,
-		waiters:   make([]waiter, 0),
-	}
-}

@@ -7,9 +7,18 @@ import (
 	"time"
 )
 
+// mustNewSafe creates a new limiter or panics on error (for benchmarks only)
+func mustNewSafe(capacity int) Limiter {
+	limiter, err := NewSafe(capacity)
+	if err != nil {
+		panic(err)
+	}
+	return limiter
+}
+
 // BenchmarkAcquire measures the performance of Acquire calls
 func BenchmarkAcquire(b *testing.B) {
-	limiter := New(1000) // High capacity to avoid blocking
+	limiter := mustNewSafe(1000) // High capacity to avoid blocking
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -23,7 +32,7 @@ func BenchmarkAcquire(b *testing.B) {
 
 // BenchmarkAcquireN measures the performance of AcquireN calls
 func BenchmarkAcquireN(b *testing.B) {
-	limiter := New(1000)
+	limiter := mustNewSafe(1000)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -37,7 +46,7 @@ func BenchmarkAcquireN(b *testing.B) {
 
 // BenchmarkWait measures the performance of Wait calls that succeed immediately
 func BenchmarkWait(b *testing.B) {
-	limiter := New(1000)
+	limiter := mustNewSafe(1000)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -52,7 +61,7 @@ func BenchmarkWait(b *testing.B) {
 
 // BenchmarkRelease measures the performance of Release calls
 func BenchmarkRelease(b *testing.B) {
-	limiter := New(1000)
+	limiter := mustNewSafe(1000)
 
 	// Pre-acquire permits to release
 	for i := 0; i < 1000; i++ {
@@ -70,7 +79,7 @@ func BenchmarkRelease(b *testing.B) {
 
 // BenchmarkStateInspection measures the performance of state inspection methods
 func BenchmarkStateInspection(b *testing.B) {
-	limiter := New(1000)
+	limiter := mustNewSafe(1000)
 
 	// Use some permits
 	for i := 0; i < 500; i++ {
@@ -94,7 +103,7 @@ func BenchmarkStateInspection(b *testing.B) {
 
 // BenchmarkSetCapacity measures the performance of SetCapacity calls
 func BenchmarkSetCapacity(b *testing.B) {
-	limiter := New(100)
+	limiter := mustNewSafe(100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -105,7 +114,7 @@ func BenchmarkSetCapacity(b *testing.B) {
 
 // BenchmarkHighContention simulates high contention scenarios
 func BenchmarkHighContention(b *testing.B) {
-	limiter := New(10) // Low capacity to create contention
+	limiter := mustNewSafe(10) // Low capacity to create contention
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -120,7 +129,7 @@ func BenchmarkHighContention(b *testing.B) {
 
 // BenchmarkMixedOperations simulates mixed workload
 func BenchmarkMixedOperations(b *testing.B) {
-	limiter := New(100)
+	limiter := mustNewSafe(100)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -150,7 +159,7 @@ func BenchmarkMixedOperations(b *testing.B) {
 
 // BenchmarkWaitWithTimeout measures Wait performance with context timeout
 func BenchmarkWaitWithTimeout(b *testing.B) {
-	limiter := New(1000)
+	limiter := mustNewSafe(1000)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -164,7 +173,7 @@ func BenchmarkWaitWithTimeout(b *testing.B) {
 
 // BenchmarkWakeupPerformance measures waiter wakeup performance
 func BenchmarkWakeupPerformance(b *testing.B) {
-	limiter := New(1)
+	limiter := mustNewSafe(1)
 
 	// Fill the limiter
 	limiter.Acquire()
@@ -199,7 +208,7 @@ func BenchmarkWakeupPerformance(b *testing.B) {
 func BenchmarkMemoryAllocation(b *testing.B) {
 	b.ReportAllocs()
 
-	limiter := New(100)
+	limiter := mustNewSafe(100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -215,7 +224,7 @@ func BenchmarkCapacityScaling(b *testing.B) {
 
 	for _, capacity := range capacities {
 		b.Run(fmt.Sprintf("Capacity-%d", capacity), func(b *testing.B) {
-			limiter := New(capacity)
+			limiter := mustNewSafe(capacity)
 
 			b.ResetTimer()
 			b.RunParallel(func(pb *testing.PB) {
@@ -231,7 +240,7 @@ func BenchmarkCapacityScaling(b *testing.B) {
 
 // BenchmarkWaiterQueueManagement measures performance with many waiters
 func BenchmarkWaiterQueueManagement(b *testing.B) {
-	limiter := New(1)
+	limiter := mustNewSafe(1)
 
 	// Fill the limiter
 	limiter.Acquire()
@@ -268,7 +277,7 @@ func BenchmarkWaiterQueueManagement(b *testing.B) {
 
 // BenchmarkContextCancellation measures performance of context cancellation
 func BenchmarkContextCancellation(b *testing.B) {
-	limiter := New(1)
+	limiter := mustNewSafe(1)
 
 	// Fill the limiter
 	limiter.Acquire()

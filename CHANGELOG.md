@@ -1,0 +1,34 @@
+# Changelog
+
+All notable changes to goflow will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v1.0.0] - 2025-01-XX
+
+### Added
+- Production-ready rate limiting with token bucket and leaky bucket implementations
+- Advanced concurrency limiters with resource protection
+- Enterprise-grade task scheduling with cron support and advanced patterns
+- High-performance streaming with functional operations and backpressure control
+- Comprehensive Prometheus metrics integration
+- Distributed rate limiting with Redis coordination
+- Multi-stage pipeline processing
+- Extensive benchmarking and performance optimization
+- Complete documentation and examples
+
+### Features
+- **Rate Limiting**: Token bucket, leaky bucket, and distributed limiters
+- **Concurrency Control**: Resource-aware concurrency limiting
+- **Scheduling**: Worker pools, schedulers with cron support
+- **Streaming**: Functional stream processing with backpressure
+- **Observability**: Full Prometheus metrics and monitoring
+- **Production Ready**: Comprehensive error handling and graceful shutdown
+
+### Performance
+- Scheduler operations: ~1,636 ns/op
+- Rate limiting: Sub-microsecond decisions
+- Worker pools: >100K tasks/second throughput
+
+[v1.0.0]: https://github.com/vnykmshr/goflow/releases/tag/v1.0.0

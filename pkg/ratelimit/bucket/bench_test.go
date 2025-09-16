@@ -6,9 +6,18 @@ import (
 	"time"
 )
 
+// mustNewSafe creates a new limiter or panics on error (for benchmarks only)
+func mustNewSafe(rate Limit, burst int) Limiter {
+	limiter, err := NewSafe(rate, burst)
+	if err != nil {
+		panic(err)
+	}
+	return limiter
+}
+
 // BenchmarkAllow measures the performance of Allow calls
 func BenchmarkAllow(b *testing.B) {
-	limiter := New(1000000, 1000) // High rate to avoid blocking
+	limiter := mustNewSafe(1000000, 1000) // High rate to avoid blocking
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -20,7 +29,7 @@ func BenchmarkAllow(b *testing.B) {
 
 // BenchmarkAllowN measures the performance of AllowN calls
 func BenchmarkAllowN(b *testing.B) {
-	limiter := New(1000000, 1000)
+	limiter := mustNewSafe(1000000, 1000)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -32,7 +41,7 @@ func BenchmarkAllowN(b *testing.B) {
 
 // BenchmarkReserve measures the performance of Reserve calls
 func BenchmarkReserve(b *testing.B) {
-	limiter := New(1000000, 1000)
+	limiter := mustNewSafe(1000000, 1000)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -47,7 +56,7 @@ func BenchmarkReserve(b *testing.B) {
 
 // BenchmarkWait measures the performance of Wait calls that succeed immediately
 func BenchmarkWait(b *testing.B) {
-	limiter := New(1000000, 1000)
+	limiter := mustNewSafe(1000000, 1000)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -60,7 +69,7 @@ func BenchmarkWait(b *testing.B) {
 
 // BenchmarkTokens measures the performance of Tokens calls
 func BenchmarkTokens(b *testing.B) {
-	limiter := New(1000000, 1000)
+	limiter := mustNewSafe(1000000, 1000)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -72,7 +81,7 @@ func BenchmarkTokens(b *testing.B) {
 
 // BenchmarkSetLimit measures the performance of SetLimit calls
 func BenchmarkSetLimit(b *testing.B) {
-	limiter := New(100, 100)
+	limiter := mustNewSafe(100, 100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -82,7 +91,7 @@ func BenchmarkSetLimit(b *testing.B) {
 
 // BenchmarkConcurrentMixed simulates mixed workload with different operations
 func BenchmarkConcurrentMixed(b *testing.B) {
-	limiter := New(100000, 1000)
+	limiter := mustNewSafe(100000, 1000)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -108,7 +117,7 @@ func BenchmarkConcurrentMixed(b *testing.B) {
 // BenchmarkHighContention simulates high contention scenarios
 func BenchmarkHighContention(b *testing.B) {
 	// Lower rate/burst to create more contention
-	limiter := New(100, 10)
+	limiter := mustNewSafe(100, 10)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -120,7 +129,7 @@ func BenchmarkHighContention(b *testing.B) {
 
 // BenchmarkZeroRate benchmarks a limiter with zero refill rate
 func BenchmarkZeroRate(b *testing.B) {
-	limiter := New(0, 1000) // No refill, just initial burst
+	limiter := mustNewSafe(0, 1000) // No refill, just initial burst
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -130,7 +139,7 @@ func BenchmarkZeroRate(b *testing.B) {
 
 // BenchmarkInfiniteRate benchmarks a limiter with infinite rate
 func BenchmarkInfiniteRate(b *testing.B) {
-	limiter := New(Inf, 1000)
+	limiter := mustNewSafe(Inf, 1000)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -162,7 +171,7 @@ func BenchmarkTimeUpdate(b *testing.B) {
 func BenchmarkMemoryAllocation(b *testing.B) {
 	b.ReportAllocs()
 
-	limiter := New(1000, 100)
+	limiter := mustNewSafe(1000, 100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -174,7 +183,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 
 // BenchmarkReservationLifecycle measures the full reservation lifecycle
 func BenchmarkReservationLifecycle(b *testing.B) {
-	limiter := New(1000, 100)
+	limiter := mustNewSafe(1000, 100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
