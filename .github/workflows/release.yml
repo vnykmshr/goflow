@@ -5,10 +5,19 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
 
     steps:
     - name: Check out code
@@ -29,17 +38,26 @@ jobs:
       with:
         version: v1.64.8
 
-    - name: Build binaries
+    - name: Build example binaries
       run: |
         # Create dist directory
         mkdir -p dist
 
-        # Build for multiple platforms
-        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/goflow-linux-amd64 ./cmd/...
-        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/goflow-darwin-amd64 ./cmd/...
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/goflow-darwin-arm64 ./cmd/...
-        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/goflow-windows-amd64.exe ./cmd/...
-      continue-on-error: true
+        # Build example applications for multiple platforms
+        echo "Building distributed-rate-limiting example..."
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-linux-amd64 ./examples/distributed-rate-limiting
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-darwin-amd64 ./examples/distributed-rate-limiting
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-darwin-arm64 ./examples/distributed-rate-limiting
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-windows-amd64.exe ./examples/distributed-rate-limiting
+
+        echo "Building web-service example..."
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/web-service-linux-amd64 ./examples/web-service
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/web-service-darwin-amd64 ./examples/web-service
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/web-service-darwin-arm64 ./examples/web-service
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/web-service-windows-amd64.exe ./examples/web-service
+
+        # List built files
+        ls -la dist/
 
     - name: Generate changelog
       id: changelog
@@ -53,12 +71,11 @@ jobs:
         fi
 
     - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: ncipollo/release-action@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref_name }}
+        name: "goflow ${{ github.ref_name }}"
         body: |
           ## Changes
           ${{ steps.changelog.outputs.CHANGELOG }}
@@ -68,16 +85,10 @@ jobs:
           go get github.com/vnykmshr/goflow@${{ github.ref_name }}
           ```
 
+          ## What's Changed
+          See the [CHANGELOG.md](https://github.com/vnykmshr/goflow/blob/main/CHANGELOG.md) for detailed changes.
+
+        artifacts: "dist/*"
         draft: false
         prerelease: false
-
-    - name: Upload assets
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/
-        asset_name: goflow-binaries
-        asset_content_type: application/zip
-      continue-on-error: true
+        generateReleaseNotes: true
