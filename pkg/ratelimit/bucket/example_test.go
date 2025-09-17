@@ -12,7 +12,10 @@ import (
 // Example demonstrates basic usage of the token bucket rate limiter
 func Example() {
 	// Create a rate limiter that allows 10 requests per second with a burst of 5
-	limiter := bucket.New(10, 5)
+	limiter, err := bucket.NewSafe(10, 5)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Check if a request is allowed (non-blocking)
 	if limiter.Allow() {
@@ -27,7 +30,10 @@ func Example() {
 // Example_wait demonstrates blocking until tokens are available
 func Example_wait() {
 	// Create a slow rate limiter (1 request per second, burst of 1)
-	limiter := bucket.New(1, 1)
+	limiter, err := bucket.NewSafe(1, 1)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	ctx := context.Background()
 
@@ -53,7 +59,10 @@ func Example_wait() {
 // Example_reservation demonstrates the reservation pattern
 func Example_reservation() {
 	// Create a rate limiter (2 requests per second, burst of 3)
-	limiter := bucket.New(2, 3)
+	limiter, err := bucket.NewSafe(2, 3)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Use all burst tokens
 	for i := 0; i < 3; i++ {
@@ -79,7 +88,10 @@ func Example_reservation() {
 // Example_multipleTokens demonstrates consuming multiple tokens at once
 func Example_multipleTokens() {
 	// Create a rate limiter (10 tokens per second, burst of 20)
-	limiter := bucket.New(10, 20)
+	limiter, err := bucket.NewSafe(10, 20)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Try to consume 5 tokens at once
 	if limiter.AllowN(5) {
@@ -104,7 +116,10 @@ func Example_configuration() {
 		InitialTokens: 2, // Start with 2 tokens instead of full burst
 	}
 
-	limiter := bucket.NewWithConfig(config)
+	limiter, err := bucket.NewWithConfigSafe(config)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Initial tokens: %.0f\n", limiter.Tokens())
 	fmt.Printf("Rate limit: %.1f/sec\n", limiter.Limit())
@@ -118,7 +133,10 @@ func Example_configuration() {
 
 // Example_dynamicConfiguration demonstrates changing limits at runtime
 func Example_dynamicConfiguration() {
-	limiter := bucket.New(5, 10)
+	limiter, err := bucket.NewSafe(5, 10)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Original rate: %.0f/sec, burst: %d\n", limiter.Limit(), limiter.Burst())
 

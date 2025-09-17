@@ -107,4 +107,3 @@ func NewWithConfigSafe(config Config) (Limiter, error) {
 		waiters:   make([]waiter, 0),
 	}, nil
 }
-

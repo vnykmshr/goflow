@@ -60,7 +60,10 @@
 //
 // Enable local fallback when Redis is unavailable:
 //
-//	localLimiter := bucket.New(bucket.Limit(100), 200)
+//	localLimiter, err := bucket.NewSafe(bucket.Limit(100), 200)
+//	if err != nil {
+//		panic(err)
+//	}
 //
 //	config := distributed.Config{
 //		Redis:           rdb,
@@ -126,7 +129,7 @@
 //		Burst:          100,                    // Required: Burst capacity
 //		InstanceID:      "server-1",            // Auto-generated if empty
 //		FallbackToLocal: true,                  // Enable local fallback
-//		LocalLimiter:    bucket.New(50, 100),   // Local fallback limiter
+//		LocalLimiter:    func() bucket.Limiter { l, _ := bucket.NewSafe(50, 100); return l }(),   // Local fallback limiter
 //		RedisTimeout:    500 * time.Millisecond, // Redis operation timeout
 //		RefreshInterval: 100 * time.Millisecond, // Refresh frequency for Wait operations
 //		KeyTTL:         time.Hour,              // Redis key expiration

@@ -7,7 +7,10 @@ context support, dynamic configuration, and comprehensive state inspection.
 
 Basic usage:
 
-	limiter := concurrency.New(10) // Allow 10 concurrent operations
+	limiter, err := concurrency.NewSafe(10) // Allow 10 concurrent operations
+	if err != nil {
+		panic(err)
+	}
 
 	if limiter.Acquire() {
 		defer limiter.Release()
@@ -36,7 +39,10 @@ Concurrency limiting is ideal for:
 
 Worker Pool Pattern:
 
-	limiter := concurrency.New(5) // Max 5 concurrent workers
+	limiter, err := concurrency.NewSafe(5) // Max 5 concurrent workers
+	if err != nil {
+		panic(err)
+	}
 
 	var wg sync.WaitGroup
 	for _, task := range tasks {
@@ -58,7 +64,10 @@ Worker Pool Pattern:
 
 Database Connection Limiting:
 
-	dbLimiter := concurrency.New(20) // Max 20 DB connections
+	dbLimiter, err := concurrency.NewSafe(20) // Max 20 DB connections
+	if err != nil {
+		panic(err)
+	}
 
 	func queryDatabase(query string) error {
 		// Acquire connection permit
@@ -73,7 +82,10 @@ Database Connection Limiting:
 
 HTTP Server Limiting:
 
-	requestLimiter := concurrency.New(1000) // Max 1000 concurrent requests
+	requestLimiter, err := concurrency.NewSafe(1000) // Max 1000 concurrent requests
+	if err != nil {
+		panic(err)
+	}
 
 	func handler(w http.ResponseWriter, r *http.Request) {
 		if !requestLimiter.Acquire() {
@@ -114,7 +126,10 @@ Context Integration:
 Dynamic Configuration:
 
 	// Start with capacity for normal load
-	limiter := concurrency.New(10)
+	limiter, err := concurrency.NewSafe(10)
+	if err != nil {
+		panic(err)
+	}
 
 	// Increase capacity during peak hours
 	limiter.SetCapacity(50)
@@ -139,7 +154,10 @@ Advanced Configuration:
 		Capacity:         100,
 		InitialAvailable: 50, // Start with 50 operations "in use"
 	}
-	limiter := concurrency.NewWithConfig(config)
+	limiter, err := concurrency.NewWithConfigSafe(config)
+	if err != nil {
+		panic(err)
+	}
 
 Graceful Shutdown:
 

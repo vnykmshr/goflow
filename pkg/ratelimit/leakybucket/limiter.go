@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vnykmshr/goflow/pkg/common/errors"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
 
@@ -169,4 +170,48 @@ func NewWithConfig(config Config) Limiter {
 		lastLeak: config.Clock.Now(),
 		clock:    config.Clock,
 	}
+}
+
+// NewSafe creates a new leaky bucket rate limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create leaky bucket limiters for production use.
+func NewSafe(leakRate bucket.Limit, capacity int) (Limiter, error) {
+	return NewWithConfigSafe(Config{
+		LeakRate:     leakRate,
+		Capacity:     capacity,
+		Clock:        bucket.SystemClock{},
+		InitialLevel: -1, // Start empty
+	})
+}
+
+// NewWithConfigSafe creates a new leaky bucket rate limiter with validation that returns an error instead of panicking.
+// This is the recommended way to create leaky bucket limiters for production use.
+func NewWithConfigSafe(config Config) (Limiter, error) {
+	if config.LeakRate < 0 {
+		return nil, errors.NewValidationError("leakybucket", "leakRate", config.LeakRate, "leak rate must not be negative").
+			WithHint("leak rate determines how fast requests are processed")
+	}
+	if config.Capacity <= 0 {
+		return nil, errors.NewValidationError("leakybucket", "capacity", config.Capacity, "capacity must be positive").
+			WithHint("capacity determines how many requests can be queued")
+	}
+	if config.Clock == nil {
+		config.Clock = bucket.SystemClock{}
+	}
+
+	initialLevel := float64(config.InitialLevel)
+	if config.InitialLevel < 0 {
+		initialLevel = 0 // Start empty
+	}
+	// Ensure initial level doesn't exceed capacity
+	if initialLevel > float64(config.Capacity) {
+		initialLevel = float64(config.Capacity)
+	}
+
+	return &leakyBucket{
+		leakRate: config.LeakRate,
+		capacity: config.Capacity,
+		level:    initialLevel,
+		lastLeak: config.Clock.Now(),
+		clock:    config.Clock,
+	}, nil
 }

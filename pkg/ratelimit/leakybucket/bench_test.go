@@ -244,10 +244,16 @@ func BenchmarkLevelInspection(b *testing.B) {
 // BenchmarkComparison_TokenVsLeaky compares token bucket vs leaky bucket performance
 func BenchmarkComparison_TokenVsLeaky(b *testing.B) {
 	// Token bucket from existing implementation
-	tokenBucket := bucket.New(1000000, 1000)
+	tokenBucket, err := bucket.NewSafe(1000000, 1000)
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
 
 	// Leaky bucket
-	leakyBucket := New(1000000, 1000)
+	leakyBucket, err2 := NewSafe(1000000, 1000)
+	if err2 != nil {
+		b.Fatalf("unexpected error: %v", err2)
+	}
 
 	b.Run("TokenBucket", func(b *testing.B) {
 		b.ResetTimer()

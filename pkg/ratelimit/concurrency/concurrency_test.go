@@ -24,15 +24,18 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panic {
-				defer func() {
-					if r := recover(); r == nil {
-						t.Error("expected panic")
-					}
-				}()
-			}
-
-			limiter := New(tt.capacity)
-			if !tt.panic {
+				limiter, err := NewSafe(tt.capacity)
+				if err == nil {
+					t.Error("expected error for invalid capacity")
+				}
+				if limiter != nil {
+					t.Error("expected nil limiter on error")
+				}
+			} else {
+				limiter, err := NewSafe(tt.capacity)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
 				testutil.AssertEqual(t, limiter.Capacity(), tt.capacity)
 				testutil.AssertEqual(t, limiter.Available(), tt.capacity)
 				testutil.AssertEqual(t, limiter.InUse(), 0)
@@ -79,15 +82,18 @@ func TestNewWithConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panic {
-				defer func() {
-					if r := recover(); r == nil {
-						t.Error("expected panic")
-					}
-				}()
-			}
-
-			limiter := NewWithConfig(tt.config)
-			if !tt.panic {
+				limiter, err := NewWithConfigSafe(tt.config)
+				if err == nil {
+					t.Error("expected error for invalid config")
+				}
+				if limiter != nil {
+					t.Error("expected nil limiter on error")
+				}
+			} else {
+				limiter, err := NewWithConfigSafe(tt.config)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
 				testutil.AssertEqual(t, limiter.Capacity(), tt.expectedCapacity)
 				testutil.AssertEqual(t, limiter.Available(), tt.expectedAvailable)
 				testutil.AssertEqual(t, limiter.InUse(), tt.expectedCapacity-tt.expectedAvailable)
@@ -97,7 +103,10 @@ func TestNewWithConfig(t *testing.T) {
 }
 
 func TestBasicAcquireRelease(t *testing.T) {
-	limiter := New(3)
+	limiter, err := NewSafe(3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Should be able to acquire up to capacity
 	testutil.AssertEqual(t, limiter.Acquire(), true)
@@ -129,7 +138,10 @@ func TestBasicAcquireRelease(t *testing.T) {
 }
 
 func TestAcquireReleaseN(t *testing.T) {
-	limiter := New(10)
+	limiter, err := NewSafe(10)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Acquire multiple permits
 	testutil.AssertEqual(t, limiter.AcquireN(3), true)
@@ -162,12 +174,15 @@ func TestAcquireReleaseN(t *testing.T) {
 }
 
 func TestWaitWithContext(t *testing.T) {
-	limiter := New(1)
+	limiter, err := NewSafe(1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	ctx := context.Background()
 
 	// First wait should succeed immediately
-	err := limiter.Wait(ctx)
+	err = limiter.Wait(ctx)
 	testutil.AssertEqual(t, err, nil)
 	testutil.AssertEqual(t, limiter.Available(), 0)
 
@@ -189,7 +204,10 @@ func TestWaitWithContext(t *testing.T) {
 }
 
 func TestWaitWithRelease(t *testing.T) {
-	limiter := New(1)
+	limiter, err := NewSafe(1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Fill the limiter
 	limiter.Acquire()
@@ -219,12 +237,15 @@ func TestWaitWithRelease(t *testing.T) {
 }
 
 func TestWaitN(t *testing.T) {
-	limiter := New(5)
+	limiter, err := NewSafe(5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	ctx := context.Background()
 
 	// WaitN should work immediately when permits available
-	err := limiter.WaitN(ctx, 3)
+	err = limiter.WaitN(ctx, 3)
 	testutil.AssertEqual(t, err, nil)
 	testutil.AssertEqual(t, limiter.Available(), 2)
 
@@ -264,7 +285,10 @@ func TestWaitN(t *testing.T) {
 }
 
 func TestSetCapacity(t *testing.T) {
-	limiter := New(5)
+	limiter, err := NewSafe(5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Acquire some permits
 	limiter.AcquireN(3)
@@ -301,7 +325,10 @@ func TestSetCapacity(t *testing.T) {
 }
 
 func TestReleaseMoreThanCapacity(t *testing.T) {
-	limiter := New(2)
+	limiter, err := NewSafe(2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -313,7 +340,10 @@ func TestReleaseMoreThanCapacity(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
-	limiter := New(10)
+	limiter, err := NewSafe(10)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	const numGoroutines = 20
 	const operationsPerGoroutine = 100
 
@@ -357,7 +387,10 @@ func TestConcurrentAccess(t *testing.T) {
 }
 
 func TestMultipleWaiters(t *testing.T) {
-	limiter := New(1)
+	limiter, err := NewSafe(1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Fill the limiter
 	limiter.Acquire()
@@ -395,7 +428,10 @@ func TestMultipleWaiters(t *testing.T) {
 }
 
 func TestContextCancellation(t *testing.T) {
-	limiter := New(1)
+	limiter, err := NewSafe(1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Fill the limiter
 	limiter.Acquire()

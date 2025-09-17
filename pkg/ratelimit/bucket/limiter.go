@@ -195,4 +195,3 @@ func NewWithConfigSafe(config Config) (Limiter, error) {
 		clock:      config.Clock,
 	}, nil
 }
-

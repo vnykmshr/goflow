@@ -12,7 +12,10 @@ import (
 // Example demonstrates basic usage of the concurrency limiter
 func Example() {
 	// Create a limiter that allows 3 concurrent operations
-	limiter := concurrency.New(3)
+	limiter, err := concurrency.NewSafe(3)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Try to acquire a permit (non-blocking)
 	if limiter.Acquire() {
@@ -29,7 +32,10 @@ func Example() {
 // Example_workerPool demonstrates using concurrency limiter for a worker pool
 func Example_workerPool() {
 	// Limit concurrent workers to 2
-	limiter := concurrency.New(2)
+	limiter, err := concurrency.NewSafe(2)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	tasks := []string{"task1", "task2", "task3", "task4", "task5"}
 	var wg sync.WaitGroup
@@ -61,7 +67,10 @@ func Example_workerPool() {
 // Example_databaseConnections demonstrates limiting database connections
 func Example_databaseConnections() {
 	// Limit to 3 concurrent database connections
-	dbLimiter := concurrency.New(3)
+	dbLimiter, err := concurrency.NewSafe(3)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Database limiter capacity: %d\n", dbLimiter.Capacity())
 	fmt.Printf("Available connections: %d\n", dbLimiter.Available())
@@ -95,7 +104,10 @@ func Example_databaseConnections() {
 // Example_withTimeout demonstrates using timeouts with concurrency limiter
 func Example_withTimeout() {
 	// Small limiter to demonstrate blocking
-	limiter := concurrency.New(1)
+	limiter, err := concurrency.NewSafe(1)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Fill the limiter
 	limiter.Acquire()
@@ -104,7 +116,7 @@ func Example_withTimeout() {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	err := limiter.Wait(ctx)
+	err = limiter.Wait(ctx)
 	if err != nil {
 		fmt.Printf("Failed to acquire permit: %v\n", err)
 	} else {
@@ -117,7 +129,10 @@ func Example_withTimeout() {
 
 // Example_multiplePermits demonstrates acquiring multiple permits at once
 func Example_multiplePermits() {
-	limiter := concurrency.New(5)
+	limiter, err := concurrency.NewSafe(5)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Acquire multiple permits for batch operation
 	if limiter.AcquireN(3) {
@@ -142,7 +157,10 @@ func Example_multiplePermits() {
 
 // Example_dynamicCapacity demonstrates changing capacity at runtime
 func Example_dynamicCapacity() {
-	limiter := concurrency.New(3)
+	limiter, err := concurrency.NewSafe(3)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Use some permits
 	limiter.AcquireN(2)
@@ -173,7 +191,10 @@ func Example_customConfiguration() {
 		InitialAvailable: 5, // Start with only 5 available (simulating 5 in use)
 	}
 
-	limiter := concurrency.NewWithConfig(config)
+	limiter, err := concurrency.NewWithConfigSafe(config)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Custom limiter: capacity=%d, available=%d, in_use=%d\n",
 		limiter.Capacity(), limiter.Available(), limiter.InUse())
@@ -183,7 +204,10 @@ func Example_customConfiguration() {
 
 // Example_gracefulShutdown demonstrates graceful shutdown pattern
 func Example_gracefulShutdown() {
-	limiter := concurrency.New(2)
+	limiter, err := concurrency.NewSafe(2)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Start some work
 	var wg sync.WaitGroup
@@ -216,7 +240,10 @@ func Example_gracefulShutdown() {
 // Example_httpServerLimiting demonstrates HTTP request limiting pattern
 func Example_httpServerLimiting() {
 	// Limit concurrent HTTP requests
-	requestLimiter := concurrency.New(100)
+	requestLimiter, err := concurrency.NewSafe(100)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Simulate request handler
 	handleRequest := func(requestID int) {

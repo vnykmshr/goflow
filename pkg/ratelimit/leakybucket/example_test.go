@@ -13,7 +13,10 @@ import (
 // Example demonstrates basic usage of the leaky bucket rate limiter
 func Example() {
 	// Create a leaky bucket that leaks 5 requests per second with capacity of 10
-	limiter := leakybucket.New(5, 10)
+	limiter, err := leakybucket.NewSafe(5, 10)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Check if a request is allowed (non-blocking)
 	if limiter.Allow() {
@@ -28,7 +31,10 @@ func Example() {
 // Example_trafficShaping demonstrates smooth traffic flow characteristics
 func Example_trafficShaping() {
 	// Create a leaky bucket for smooth traffic shaping (2 requests/sec, capacity 4)
-	limiter := leakybucket.New(2, 4)
+	limiter, err := leakybucket.NewSafe(2, 4)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Initial level: %.0f/%.0f\n", limiter.Level(), float64(limiter.Capacity()))
 
@@ -49,7 +55,10 @@ func Example_trafficShaping() {
 // Example_wait demonstrates blocking until space is available
 func Example_wait() {
 	// Create a slow leaky bucket (1 request per second, capacity 1)
-	limiter := leakybucket.New(1, 1)
+	limiter, err := leakybucket.NewSafe(1, 1)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	ctx := context.Background()
 
@@ -75,7 +84,10 @@ func Example_wait() {
 // Example_reservation demonstrates the reservation pattern
 func Example_reservation() {
 	// Create a leaky bucket (3 requests per second, capacity 5)
-	limiter := leakybucket.New(3, 5)
+	limiter, err := leakybucket.NewSafe(3, 5)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Fill bucket to capacity
 	for i := 0; i < 5; i++ {
@@ -101,7 +113,10 @@ func Example_reservation() {
 // Example_multipleRequests demonstrates handling multiple requests at once
 func Example_multipleRequests() {
 	// Create a leaky bucket (10 requests per second, capacity 20)
-	limiter := leakybucket.New(10, 20)
+	limiter, err := leakybucket.NewSafe(10, 20)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	// Try to handle 5 requests at once
 	if limiter.AllowN(5) {
@@ -127,7 +142,10 @@ func Example_configuration() {
 		InitialLevel: 3, // Start with 3 requests in bucket
 	}
 
-	limiter := leakybucket.NewWithConfig(config)
+	limiter, err := leakybucket.NewWithConfigSafe(config)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Initial level: %.0f\n", limiter.Level())
 	fmt.Printf("Leak rate: %.1f/sec\n", limiter.LeakRate())
@@ -143,7 +161,10 @@ func Example_configuration() {
 
 // Example_dynamicConfiguration demonstrates changing limits at runtime
 func Example_dynamicConfiguration() {
-	limiter := leakybucket.New(5, 10)
+	limiter, err := leakybucket.NewSafe(5, 10)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create limiter: %v", err))
+	}
 
 	fmt.Printf("Original rate: %.0f/sec, capacity: %d\n", limiter.LeakRate(), limiter.Capacity())
 
@@ -164,8 +185,14 @@ func Example_dynamicConfiguration() {
 // Example_comparison demonstrates differences from token bucket
 func Example_comparison() {
 	// Both limiters allow same sustained rate but different burst behavior
-	tokenBucket := bucket.New(5, 10)      // 5 tokens/sec, burst of 10
-	leakyBucket := leakybucket.New(5, 10) // 5 leaks/sec, capacity of 10
+	tokenBucket, err := bucket.NewSafe(5, 10) // 5 tokens/sec, burst of 10
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create token bucket: %v", err))
+	}
+	leakyBucket, err := leakybucket.NewSafe(5, 10) // 5 leaks/sec, capacity of 10
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create leaky bucket: %v", err))
+	}
 
 	fmt.Println("=== Token Bucket (allows bursts) ===")
 	fmt.Printf("Initial tokens: %.0f\n", tokenBucket.Tokens())

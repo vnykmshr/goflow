@@ -8,7 +8,10 @@ consumption.
 
 Basic usage:
 
-	limiter := leakybucket.New(5, 10) // 5 requests/sec leak rate, capacity 10
+	limiter, err := leakybucket.NewSafe(5, 10) // 5 requests/sec leak rate, capacity 10
+	if err != nil {
+		panic(err)
+	}
 	if limiter.Allow() {
 		// Process request
 	}
@@ -24,10 +27,16 @@ The leaky bucket algorithm provides smooth traffic flow by:
 Comparison with Token Bucket:
 
 	// Token Bucket: Allows bursts, starts with full tokens
-	tokenLimiter := bucket.New(5, 10) // Allows immediate burst of 10
+	tokenLimiter, err := bucket.NewSafe(5, 10) // Allows immediate burst of 10
+	if err != nil {
+		panic(err)
+	}
 
 	// Leaky Bucket: Smooth flow, starts empty
-	leakyLimiter := leakybucket.New(5, 10) // Builds up to capacity gradually
+	leakyLimiter, err2 := leakybucket.NewSafe(5, 10) // Builds up to capacity gradually
+	if err2 != nil {
+		panic(err2)
+	}
 
 Use Cases:
 
@@ -50,7 +59,10 @@ Configuration Options:
 		InitialLevel: 5,     // Start with some requests in bucket
 		Clock:        clock, // Custom time source (for testing)
 	}
-	limiter := leakybucket.NewWithConfig(config)
+	limiter, err := leakybucket.NewWithConfigSafe(config)
+	if err != nil {
+		panic(err)
+	}
 
 Advanced Features:
 

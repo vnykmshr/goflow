@@ -40,15 +40,18 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panic {
-				defer func() {
-					if r := recover(); r == nil {
-						t.Error("expected panic")
-					}
-				}()
-			}
-
-			limiter := New(tt.rate, tt.burst)
-			if !tt.panic {
+				limiter, err := NewSafe(tt.rate, tt.burst)
+				if err == nil {
+					t.Error("expected error for invalid parameters")
+				}
+				if limiter != nil {
+					t.Error("expected nil limiter on error")
+				}
+			} else {
+				limiter, err := NewSafe(tt.rate, tt.burst)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
 				testutil.AssertEqual(t, limiter.Limit(), tt.rate)
 				testutil.AssertEqual(t, limiter.Burst(), tt.burst)
 				testutil.AssertEqual(t, limiter.Tokens(), float64(tt.burst))
@@ -88,12 +91,15 @@ func TestEvery(t *testing.T) {
 
 func TestAllow(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens per second
 		Burst:         5,  // 5 token capacity
 		Clock:         clock,
 		InitialTokens: 5, // Start full
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Should allow 5 requests immediately (full burst)
 	for i := 0; i < 5; i++ {
@@ -121,12 +127,15 @@ func TestAllow(t *testing.T) {
 
 func TestAllowN(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10,
 		Burst:         10,
 		Clock:         clock,
 		InitialTokens: 10,
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Should allow consuming multiple tokens
 	if !limiter.AllowN(3) {
@@ -153,17 +162,20 @@ func TestAllowN(t *testing.T) {
 
 func TestWait(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens/sec = 100ms per token
 		Burst:         1,
 		Clock:         clock,
 		InitialTokens: 1, // Start with one token
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	ctx := context.Background()
 
 	// First wait should succeed immediately (have 1 token)
-	err := limiter.Wait(ctx)
+	err = limiter.Wait(ctx)
 	testutil.AssertNoError(t, err)
 
 	// Second wait should need to wait for refill
@@ -184,12 +196,15 @@ func TestWait(t *testing.T) {
 
 func TestWaitWithContext(t *testing.T) {
 	// Test context cancellation
-	limiter := New(1, 1) // 1 token per second, start with 1 token
+	limiter, err := NewSafe(1, 1) // 1 token per second, start with 1 token
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	err := limiter.Wait(ctx)
+	err = limiter.Wait(ctx)
 	if err == nil {
 		t.Error("Wait should return error when context is canceled")
 	}
@@ -198,8 +213,11 @@ func TestWaitWithContext(t *testing.T) {
 	}
 
 	// Test with timeout - use a limiter that will definitely timeout
-	limiter2 := New(0.1, 1) // Very slow rate: 0.1 tokens per second = 10 seconds per token
-	limiter2.Allow()        // Consume the initial token
+	limiter2, err := NewSafe(0.1, 1) // Very slow rate: 0.1 tokens per second = 10 seconds per token
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	limiter2.Allow() // Consume the initial token
 
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel2()
@@ -215,12 +233,15 @@ func TestWaitWithContext(t *testing.T) {
 
 func TestReserve(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens/sec = 100ms per token
 		Burst:         2,
 		Clock:         clock,
 		InitialTokens: 1,
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// First reservation should be immediate
 	r1 := limiter.Reserve()
@@ -248,12 +269,15 @@ func TestReserve(t *testing.T) {
 
 func TestReservationCancel(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10,
 		Burst:         2,
 		Clock:         clock,
 		InitialTokens: 1, // Start with 1 token
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	initialTokens := limiter.Tokens()
 	testutil.AssertEqual(t, initialTokens, 1.0)
@@ -284,7 +308,10 @@ func TestReservationCancel(t *testing.T) {
 }
 
 func TestSetLimit(t *testing.T) {
-	limiter := New(10, 5)
+	limiter, err := NewSafe(10, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	limiter.SetLimit(20)
 	testutil.AssertEqual(t, limiter.Limit(), Limit(20))
@@ -295,7 +322,10 @@ func TestSetLimit(t *testing.T) {
 }
 
 func TestSetBurst(t *testing.T) {
-	limiter := New(10, 5)
+	limiter, err := NewSafe(10, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	limiter.SetBurst(10)
 	testutil.AssertEqual(t, limiter.Burst(), 10)
@@ -311,7 +341,10 @@ func TestSetBurst(t *testing.T) {
 }
 
 func TestInfiniteRate(t *testing.T) {
-	limiter := New(Inf, 1)
+	limiter, err := NewSafe(Inf, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Should always allow with infinite rate
 	for i := 0; i < 1000; i++ {
@@ -326,12 +359,15 @@ func TestInfiniteRate(t *testing.T) {
 
 func TestZeroRate(t *testing.T) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          0,
 		Burst:         5,
 		Clock:         clock,
 		InitialTokens: 5,
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Should allow initial burst
 	for i := 0; i < 5; i++ {
@@ -353,7 +389,10 @@ func TestZeroRate(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
-	limiter := New(100, 10) // High rate to avoid blocking
+	limiter, err := NewSafe(100, 10) // High rate to avoid blocking
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	done := make(chan bool)
 	const numGoroutines = 10

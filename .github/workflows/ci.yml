@@ -6,9 +6,30 @@ on:
   pull_request:
     branches: [ main, master ]
 
+env:
+  GO_VERSION: "1.23.x"
+
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: v1.64.8
+        args: --timeout=10m
+
   test:
-    name: Test & Lint
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,19 +60,49 @@ jobs:
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.out ./...
 
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: v1.64.8
-        args: --timeout=10m
-
-    - name: Build
-      run: go build -v ./...
-
-    - name: Upload coverage (Go 1.23 only)
+    - name: Upload coverage reports
       if: matrix.go-version == '1.23.x'
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.out
         flags: unittests
         fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Build all packages
+      run: go build -v ./...
+
+    - name: Build examples
+      run: |
+        go build -o bin/distributed-rate-limiting ./examples/distributed-rate-limiting
+        go build -o bin/web-service ./examples/web-service
+
+    - name: Verify examples work
+      run: |
+        timeout 5s ./bin/web-service || [ $? -eq 124 ]
+        echo "Examples built and basic startup verified"

@@ -152,12 +152,15 @@ func BenchmarkInfiniteRate(b *testing.B) {
 // BenchmarkTimeUpdate measures the cost of time-based token updates
 func BenchmarkTimeUpdate(b *testing.B) {
 	clock := &MockClock{now: time.Now()}
-	limiter := NewWithConfig(Config{
+	limiter, err := NewWithConfigSafe(Config{
 		Rate:          100,
 		Burst:         100,
 		Clock:         clock,
 		InitialTokens: 0,
 	})
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

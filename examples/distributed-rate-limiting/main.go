@@ -264,7 +264,10 @@ func demonstrateFallback() {
 	defer rdb.Close()
 
 	// Create local fallback limiter
-	localLimiter := bucket.New(bucket.Limit(2), 5)
+	localLimiter, err := bucket.NewSafe(bucket.Limit(2), 5)
+	if err != nil {
+		log.Fatalf("Failed to create local limiter: %v", err)
+	}
 
 	config := distributed.Config{
 		Redis:           rdb,

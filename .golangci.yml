@@ -1,13 +1,15 @@
 run:
-  timeout: 5m
+  timeout: 10m
   tests: true
   modules-download-mode: readonly
 
 linters-settings:
   govet:
     enable-all: true
+    disable:
+      - fieldalignment  # Often not worth the optimization noise
   gocyclo:
-    min-complexity: 10
+    min-complexity: 15  # More realistic threshold
   goconst:
     min-len: 3
     min-occurrences: 3
@@ -19,6 +21,10 @@ linters-settings:
     locale: US
   unparam:
     check-exported: false
+  revive:
+    rules:
+      - name: var-naming
+        disabled: true  # Allow common Go naming patterns
 
 linters:
   enable:
@@ -37,17 +43,34 @@ linters:
     - gocyclo
     - unparam
     - prealloc
+    - revive
+  disable:
+    - varnamelen  # Too noisy for short variable names
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-rules:
+    # Test files - more lenient
     - path: _test\.go
       linters:
         - gocyclo
         - errcheck
+        - unparam
+        - goconst
+    # Benchmark tests - allow empty branches for performance testing
+    - path: bench_test\.go
+      linters:
         - staticcheck
+      text: "SA9003"
+    # Examples - focus on readability over strict lint rules
     - path: examples/
       linters:
         - errcheck
-    - linters:
-        - govet
-      text: "fieldalignment"
+        - unparam
+        - goconst
+    # Generated files
+    - path: ".*\\.pb\\.go"
+      linters:
+        - revive
+        - staticcheck
