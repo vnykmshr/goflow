@@ -356,7 +356,7 @@ func TestInitialLevel(t *testing.T) {
 	testutil.AssertEqual(t, limiter2.Level(), 3.0) // Clamped to capacity
 }
 
-func TestConcurrentAccess(t *testing.T) {
+func TestConcurrentAccess(_ *testing.T) {
 	limiter := New(100, 10) // High rate to avoid blocking
 
 	done := make(chan bool)

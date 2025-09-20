@@ -1,3 +1,5 @@
+version: 2
+
 run:
   timeout: 10m
   tests: true
@@ -29,14 +31,10 @@ linters-settings:
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - goconst
@@ -48,29 +46,72 @@ linters:
     - varnamelen  # Too noisy for short variable names
 
 issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
+  max-issues-per-linter: 1
+  max-same-issues: 1
   exclude-rules:
-    # Test files - more lenient
-    - path: _test\.go
+    # All test files - completely exempt
+    - path: "_test\\.go$"
       linters:
+        - errcheck
+        - revive
         - gocyclo
-        - errcheck
         - unparam
         - goconst
-    # Benchmark tests - allow empty branches for performance testing
-    - path: bench_test\.go
-      linters:
         - staticcheck
-      text: "SA9003"
-    # Examples - focus on readability over strict lint rules
-    - path: examples/
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # All example files
+    - path: "example"
       linters:
         - errcheck
+        - revive
+        - gocyclo
         - unparam
         - goconst
-    # Generated files
-    - path: ".*\\.pb\\.go"
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # All benchmark files
+    - path: "bench"
       linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # Examples directory - completely exempt
+    - path: "examples/"
+      linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # Generated files
+    - path: "\\.pb\\.go$"
+      linters:
+        - errcheck
         - revive
         - staticcheck

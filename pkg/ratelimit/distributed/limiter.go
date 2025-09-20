@@ -7,9 +7,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// DistributedLimiter provides rate limiting across multiple application instances
+// Limiter provides rate limiting across multiple application instances
 // using Redis as the coordination backend.
-type DistributedLimiter interface {
+type Limiter interface {
 	// Allow reports whether an event may happen now across all instances.
 	Allow(ctx context.Context) bool
 
@@ -126,7 +126,7 @@ const (
 )
 
 // NewLimiter creates a new distributed rate limiter with the specified strategy.
-func NewLimiter(strategy Strategy, config Config) (DistributedLimiter, error) {
+func NewLimiter(strategy Strategy, config Config) (Limiter, error) {
 	if err := validateConfig(config); err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func applyConfigDefaults(config Config) Config {
 }
 
 // createLimiterByStrategy creates the appropriate limiter implementation.
-func createLimiterByStrategy(strategy Strategy, config Config) (DistributedLimiter, error) {
+func createLimiterByStrategy(strategy Strategy, config Config) (Limiter, error) {
 	switch strategy {
 	case TokenBucket:
 		return newRedisTokenBucket(config)

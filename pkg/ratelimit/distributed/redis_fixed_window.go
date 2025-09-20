@@ -19,7 +19,7 @@ type redisFixedWindow struct {
 }
 
 // newRedisFixedWindow creates a new Redis-based fixed window rate limiter.
-func newRedisFixedWindow(config Config) (DistributedLimiter, error) {
+func newRedisFixedWindow(config Config) (Limiter, error) {
 	rfw := &redisFixedWindow{
 		config: config,
 		keys:   redisKeys(config.Key),

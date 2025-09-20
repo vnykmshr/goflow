@@ -30,7 +30,7 @@ func main() {
 		Addr: "localhost:6379",
 		DB:   0,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -71,7 +71,7 @@ func demonstrateBasicDistributedLimiting(rdb *redis.Client) {
 	if err != nil {
 		log.Fatalf("Failed to create limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	ctx := context.Background()
 
@@ -117,7 +117,7 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 	}
 
 	// Create 3 instances
-	limiters := make([]distributed.DistributedLimiter, 3)
+	limiters := make([]distributed.Limiter, 3)
 	for i := 0; i < 3; i++ {
 		config := baseConfig
 		config.InstanceID = fmt.Sprintf("instance-%d", i+1)
@@ -127,7 +127,7 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 			log.Fatalf("Failed to create limiter %d: %v", i+1, err)
 		}
 		limiters[i] = limiter
-		defer limiter.Close()
+		defer func() { _ = limiter.Close() }()
 	}
 
 	ctx := context.Background()
@@ -139,7 +139,7 @@ func demonstrateMultipleInstances(rdb *redis.Client) {
 
 	for i, limiter := range limiters {
 		wg.Add(1)
-		go func(instanceID int, lim distributed.DistributedLimiter) {
+		go func(instanceID int, lim distributed.Limiter) {
 			defer wg.Done()
 			results[instanceID] = make([]bool, 6)
 
@@ -261,7 +261,7 @@ func demonstrateFallback() {
 		Addr:        "localhost:9999", // Non-existent server
 		DialTimeout: 100 * time.Millisecond,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	// Create local fallback limiter
 	localLimiter, err := bucket.NewSafe(bucket.Limit(2), 5)
@@ -295,7 +295,7 @@ func demonstrateFallback() {
 		fmt.Println()
 		return
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	// If we somehow get here, test the limiter
 	fmt.Print("Distributed limiter test: ")
@@ -326,7 +326,7 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 	if err != nil {
 		log.Fatalf("Failed to create limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	ctx := context.Background()
 
@@ -343,7 +343,7 @@ func demonstrateLoadTesting(rdb *redis.Client) {
 
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go func(workerID int) {
+		go func(_ int) {
 			defer wg.Done()
 			allowed := 0
 
@@ -388,7 +388,7 @@ func runHTTPServer() {
 		Addr: "localhost:6379",
 		DB:   0,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -408,7 +408,7 @@ func runHTTPServer() {
 	if err != nil {
 		log.Fatalf("Failed to create limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	// HTTP handler with rate limiting
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
@@ -421,7 +421,7 @@ func runHTTPServer() {
 		time.Sleep(100 * time.Millisecond)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"message": "Hello from %s!", "timestamp": "%s"}`,
+		_, _ = fmt.Fprintf(w, `{"message": "Hello from %s!", "timestamp": "%s"}`,
 			config.InstanceID, time.Now().Format(time.RFC3339))
 	})
 
@@ -434,7 +434,7 @@ func runHTTPServer() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{
+		_, _ = fmt.Fprintf(w, `{
 	"rate": %.1f,
 	"burst": %d,
 	"tokens": %.1f,

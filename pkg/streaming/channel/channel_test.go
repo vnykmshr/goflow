@@ -30,7 +30,7 @@ func TestNewWithConfig(t *testing.T) {
 
 func TestBasicSendReceive(t *testing.T) {
 	ch := New[int](5)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -55,7 +55,7 @@ func TestBasicSendReceive(t *testing.T) {
 
 func TestTrySendTryReceive(t *testing.T) {
 	ch := New[string](2)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	// Try send when buffer has space
 	testutil.AssertNoError(t, ch.TrySend("hello"))
@@ -65,7 +65,7 @@ func TestTrySendTryReceive(t *testing.T) {
 	// Try send when buffer is full (should fail with default strategy)
 	config := Config{BufferSize: 2, Strategy: Error}
 	ch2 := NewWithConfig[string](config)
-	defer ch2.Close()
+	defer func() { _ = ch2.Close() }()
 
 	testutil.AssertNoError(t, ch2.TrySend("a"))
 	testutil.AssertNoError(t, ch2.TrySend("b"))
@@ -80,7 +80,7 @@ func TestTrySendTryReceive(t *testing.T) {
 
 	// Try receive when empty
 	ch3 := New[int](5)
-	defer ch3.Close()
+	defer func() { _ = ch3.Close() }()
 
 	_, ok, err = ch3.TryReceive()
 	testutil.AssertNoError(t, err)
@@ -93,7 +93,7 @@ func TestBlockStrategy(t *testing.T) {
 		Strategy:   Block,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -142,7 +142,7 @@ func TestDropStrategy(t *testing.T) {
 		},
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -179,7 +179,7 @@ func TestDropOldestStrategy(t *testing.T) {
 		},
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -209,7 +209,7 @@ func TestErrorStrategy(t *testing.T) {
 		Strategy:   Error,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -231,7 +231,7 @@ func TestContextCancellation(t *testing.T) {
 		Strategy:   Error,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -248,7 +248,7 @@ func TestContextCancellation(t *testing.T) {
 	cancel() // Cancel immediately
 
 	ch2 := New[int](1)
-	defer ch2.Close()
+	defer func() { _ = ch2.Close() }()
 
 	_, err = ch2.Receive(ctx)
 	testutil.AssertError(t, err)
@@ -261,7 +261,7 @@ func TestSendReceiveTimeout(t *testing.T) {
 		Strategy:   Error,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -278,7 +278,7 @@ func TestSendReceiveTimeout(t *testing.T) {
 	defer cancel()
 
 	ch2 := New[int](1)
-	defer ch2.Close()
+	defer func() { _ = ch2.Close() }()
 
 	// Sleep to ensure timeout
 	time.Sleep(2 * time.Millisecond)
@@ -327,7 +327,7 @@ func TestClose(t *testing.T) {
 
 func TestConcurrentAccess(t *testing.T) {
 	ch := New[int](100)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 	const numGoroutines = 10
@@ -381,7 +381,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 func TestStats(t *testing.T) {
 	ch := New[int](5)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -414,7 +414,7 @@ func TestDropStrategyStats(t *testing.T) {
 		Strategy:   Drop,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -440,7 +440,7 @@ func TestBlockingStats(t *testing.T) {
 		},
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -482,7 +482,7 @@ func TestCallbacks(t *testing.T) {
 	}
 
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -498,7 +498,7 @@ func TestCallbacks(t *testing.T) {
 
 func TestCircularBuffer(t *testing.T) {
 	ch := New[int](3)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
@@ -535,56 +535,56 @@ func TestDoubleClose(t *testing.T) {
 // Benchmark tests
 func BenchmarkSend(b *testing.B) {
 	ch := New[int](1000)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ch.Send(ctx, i)
+		_ = ch.Send(ctx, i)
 	}
 }
 
 func BenchmarkReceive(b *testing.B) {
 	ch := New[int](1000)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Pre-fill channel
 	for i := 0; i < b.N; i++ {
-		ch.Send(ctx, i)
+		_ = ch.Send(ctx, i)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ch.Receive(ctx)
+		_, _ = ch.Receive(ctx)
 	}
 }
 
 func BenchmarkTrySend(b *testing.B) {
 	ch := New[int](1000)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ch.TrySend(i)
+		_ = ch.TrySend(i)
 	}
 }
 
 func BenchmarkTryReceive(b *testing.B) {
 	ch := New[int](1000)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Pre-fill channel
 	for i := 0; i < b.N; i++ {
-		ch.Send(ctx, i)
+		_ = ch.Send(ctx, i)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ch.TryReceive()
+		_, _, _ = ch.TryReceive()
 	}
 }

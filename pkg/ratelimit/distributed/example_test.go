@@ -18,7 +18,7 @@ func Example_basicUsage() {
 		Addr: "localhost:6379",
 		DB:   1, // Use a test database
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	// Test Redis connection
 	ctx := context.Background()
@@ -40,7 +40,7 @@ func Example_basicUsage() {
 	if err != nil {
 		log.Fatalf("Failed to create limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	fmt.Println("Testing distributed rate limiting:")
 
@@ -62,7 +62,7 @@ func Example_basicUsage() {
 	}
 
 	// Clean up
-	limiter.Reset(ctx)
+	_ = limiter.Reset(ctx)
 
 	// Output varies based on timing, but should show some allowed and some denied
 }
@@ -73,7 +73,7 @@ func Example_multipleInstances() {
 		Addr: "localhost:6379",
 		DB:   1,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -96,7 +96,7 @@ func Example_multipleInstances() {
 	if err != nil {
 		log.Fatalf("Failed to create limiter1: %v", err)
 	}
-	defer limiter1.Close()
+	defer func() { _ = limiter1.Close() }()
 
 	// Instance 2
 	config2 := baseConfig
@@ -105,7 +105,7 @@ func Example_multipleInstances() {
 	if err != nil {
 		log.Fatalf("Failed to create limiter2: %v", err)
 	}
-	defer limiter2.Close()
+	defer func() { _ = limiter2.Close() }()
 
 	fmt.Println("Testing multiple instances:")
 
@@ -127,7 +127,7 @@ func Example_multipleInstances() {
 	}
 
 	// Clean up
-	limiter1.Reset(ctx)
+	_ = limiter1.Reset(ctx)
 }
 
 // Example_fallbackToLocal demonstrates fallback to local rate limiting.
@@ -137,7 +137,7 @@ func Example_fallbackToLocal() {
 		Addr:        "localhost:9999", // Non-existent Redis server
 		DialTimeout: 100 * time.Millisecond,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	// Create a local fallback limiter
 	localLimiter, err := bucket.NewSafe(bucket.Limit(2), 5)
@@ -170,7 +170,7 @@ func Example_fallbackToLocal() {
 		}
 		return
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	ctx := context.Background()
 
@@ -191,7 +191,7 @@ func Example_slidingWindow() {
 		Addr: "localhost:6379",
 		DB:   1,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -211,7 +211,7 @@ func Example_slidingWindow() {
 	if err != nil {
 		log.Fatalf("Failed to create sliding window limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	fmt.Println("Testing sliding window rate limiting:")
 
@@ -233,7 +233,7 @@ func Example_slidingWindow() {
 	}
 
 	// Clean up
-	limiter.Reset(ctx)
+	_ = limiter.Reset(ctx)
 }
 
 // Example_fixedWindow demonstrates fixed window rate limiting.
@@ -242,7 +242,7 @@ func Example_fixedWindow() {
 		Addr: "localhost:6379",
 		DB:   1,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -262,7 +262,7 @@ func Example_fixedWindow() {
 	if err != nil {
 		log.Fatalf("Failed to create fixed window limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	fmt.Println("Testing fixed window rate limiting:")
 
@@ -284,7 +284,7 @@ func Example_fixedWindow() {
 	}
 
 	// Clean up
-	limiter.Reset(ctx)
+	_ = limiter.Reset(ctx)
 }
 
 // Example_waitAndReserve demonstrates Wait and Reserve operations.
@@ -293,7 +293,7 @@ func Example_waitAndReserve() {
 		Addr: "localhost:6379",
 		DB:   1,
 	})
-	defer rdb.Close()
+	defer func() { _ = rdb.Close() }()
 
 	ctx := context.Background()
 	if err := rdb.Ping(ctx).Err(); err != nil {
@@ -313,7 +313,7 @@ func Example_waitAndReserve() {
 	if err != nil {
 		log.Fatalf("Failed to create limiter: %v", err)
 	}
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	fmt.Println("Testing Wait and Reserve operations:")
 
@@ -345,5 +345,5 @@ func Example_waitAndReserve() {
 	}
 
 	// Clean up
-	limiter.Reset(ctx)
+	_ = limiter.Reset(ctx)
 }

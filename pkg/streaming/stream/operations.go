@@ -109,7 +109,7 @@ func (f *flatMapOperation[T]) apply(ctx context.Context, input <-chan streamElem
 
 		// Get the mapped stream and consume it
 		mappedStream := f.mapper(element.value)
-		defer mappedStream.Close()
+		defer func() { _ = mappedStream.Close() }()
 
 		// Execute the mapped stream and forward its elements
 		mappedCh, err := mappedStream.(*stream[T]).execute(ctx)

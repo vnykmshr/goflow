@@ -93,7 +93,7 @@ func TestAddStageFunc(t *testing.T) {
 	p := New()
 	var executed int32
 
-	p.AddStageFunc("func-stage", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("func-stage", func(_ context.Context, input interface{}) (interface{}, error) {
 		atomic.AddInt32(&executed, 1)
 		return input, nil
 	})
@@ -249,7 +249,7 @@ func TestWorkerPoolExecution(t *testing.T) {
 	// Consume worker pool results
 	go func() {
 		for range pool.Results() {
-			// Consume results
+			_ = 1 // Consume results
 		}
 	}()
 
@@ -322,19 +322,19 @@ func TestCallbacks(t *testing.T) {
 
 	config := Config{
 		StopOnError: true, // Ensure we stop on first error
-		OnPipelineStart: func(input interface{}) {
+		OnPipelineStart: func(_ interface{}) {
 			atomic.AddInt32(&pipelineStarted, 1)
 		},
-		OnPipelineComplete: func(result Result) {
+		OnPipelineComplete: func(_ Result) {
 			atomic.AddInt32(&pipelineCompleted, 1)
 		},
-		OnStageStart: func(stageName string, input interface{}) {
+		OnStageStart: func(_ string, _ interface{}) {
 			atomic.AddInt32(&stageStarted, 1)
 		},
-		OnStageComplete: func(result StageResult) {
+		OnStageComplete: func(_ StageResult) {
 			atomic.AddInt32(&stageCompleted, 1)
 		},
-		OnError: func(stageName string, err error) {
+		OnError: func(_ string, _ error) {
 			atomic.AddInt32(&errorCallback, 1)
 		},
 	}
@@ -357,7 +357,7 @@ func TestCallbacks(t *testing.T) {
 
 func TestStageFunc(t *testing.T) {
 	var executed int32
-	stage := NewStageFunc("func-test", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("func-test", func(_ context.Context, _ interface{}) (interface{}, error) {
 		atomic.AddInt32(&executed, 1)
 		return "processed", nil
 	})

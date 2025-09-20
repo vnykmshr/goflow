@@ -20,7 +20,7 @@ type redisSlidingWindow struct {
 }
 
 // newRedisSlidingWindow creates a new Redis-based sliding window rate limiter.
-func newRedisSlidingWindow(config Config) (DistributedLimiter, error) {
+func newRedisSlidingWindow(config Config) (Limiter, error) {
 	rsw := &redisSlidingWindow{
 		config: config,
 		keys:   redisKeys(config.Key),

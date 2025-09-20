@@ -21,7 +21,7 @@ type redisTokenBucket struct {
 }
 
 // newRedisTokenBucket creates a new Redis-based distributed token bucket.
-func newRedisTokenBucket(config Config) (DistributedLimiter, error) {
+func newRedisTokenBucket(config Config) (Limiter, error) {
 	rtb := &redisTokenBucket{
 		config: config,
 		keys:   redisKeys(config.Key),

@@ -15,14 +15,14 @@ func Example() {
 	p := New()
 
 	// Add stages to the pipeline
-	p.AddStageFunc("uppercase", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("uppercase", func(_ context.Context, input interface{}) (interface{}, error) {
 		if str, ok := input.(string); ok {
 			return strings.ToUpper(str), nil
 		}
 		return input, nil
 	})
 
-	p.AddStageFunc("prefix", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("prefix", func(_ context.Context, input interface{}) (interface{}, error) {
 		if str, ok := input.(string); ok {
 			return "PROCESSED: " + str, nil
 		}
@@ -51,7 +51,7 @@ func Example_dataProcessing() {
 	p := New()
 
 	// Stage 1: Validate input
-	p.AddStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("validate", func(_ context.Context, input interface{}) (interface{}, error) {
 		data, ok := input.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("invalid input type")
@@ -66,7 +66,7 @@ func Example_dataProcessing() {
 	})
 
 	// Stage 2: Enrich data
-	p.AddStageFunc("enrich", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("enrich", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 		data["enriched"] = true
 		data["timestamp"] = time.Now().Unix()
@@ -76,7 +76,7 @@ func Example_dataProcessing() {
 	})
 
 	// Stage 3: Format output
-	p.AddStageFunc("format", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("format", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 		formatted := fmt.Sprintf("ID: %v, Enriched: %v", data["id"], data["enriched"])
 
@@ -118,19 +118,19 @@ func Example_errorHandling() {
 	p := NewWithConfig(config)
 
 	// Stage 1: Always succeeds
-	p.AddStageFunc("success", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("success", func(_ context.Context, input interface{}) (interface{}, error) {
 		fmt.Println("Stage 1: Success")
 		return input.(string) + "-processed", nil
 	})
 
 	// Stage 2: Always fails
-	p.AddStageFunc("failure", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("failure", func(_ context.Context, input interface{}) (interface{}, error) {
 		fmt.Println("Stage 2: About to fail")
 		return input, fmt.Errorf("deliberate failure")
 	})
 
 	// Stage 3: Processes previous successful output
-	p.AddStageFunc("recovery", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("recovery", func(_ context.Context, input interface{}) (interface{}, error) {
 		fmt.Println("Stage 3: Processing despite error")
 		return input.(string) + "-recovered", nil
 	})
@@ -205,14 +205,14 @@ func Example_workerPool() {
 	// Consume worker pool results
 	go func() {
 		for range pool.Results() {
-			// Results are consumed automatically
+			_ = 1 // Consume results
 		}
 	}()
 
 	// Create pipeline with worker pool
 	p := New().SetWorkerPool(pool)
 
-	p.AddStageFunc("worker-stage", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("worker-stage", func(_ context.Context, input interface{}) (interface{}, error) {
 		// This will run in the worker pool
 		return fmt.Sprintf("worker-processed: %s", input), nil
 	})
@@ -235,7 +235,7 @@ func Example_callbacks() {
 		OnPipelineStart: func(input interface{}) {
 			fmt.Printf("Pipeline started with: %v\n", input)
 		},
-		OnStageStart: func(stageName string, input interface{}) {
+		OnStageStart: func(stageName string, _ interface{}) {
 			fmt.Printf("Stage '%s' started\n", stageName)
 		},
 		OnStageComplete: func(result StageResult) {
@@ -248,7 +248,7 @@ func Example_callbacks() {
 
 	p := NewWithConfig(config)
 
-	p.AddStageFunc("callback-stage", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("callback-stage", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Removed timing dependency for deterministic output
 		return input.(string) + "-done", nil
 	})
@@ -268,13 +268,13 @@ func Example_callbacks() {
 func Example_statistics() {
 	p := New()
 
-	p.AddStageFunc("stats-stage", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("stats-stage", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 
 	// Execute multiple times
 	for i := 0; i < 3; i++ {
-		p.Execute(context.Background(), fmt.Sprintf("input-%d", i))
+		_, _ = p.Execute(context.Background(), fmt.Sprintf("input-%d", i))
 	}
 
 	// Get statistics
@@ -330,7 +330,7 @@ func Example_complexWorkflow() {
 	p := New()
 
 	// Stage 1: Parse input
-	p.AddStageFunc("parse", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("parse", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Simulate parsing structured data
 		data := map[string]interface{}{
 			"raw":    input,
@@ -340,14 +340,14 @@ func Example_complexWorkflow() {
 	})
 
 	// Stage 2: Validate
-	p.AddStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("validate", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 		data["validated"] = true
 		return data, nil
 	})
 
 	// Stage 3: Transform
-	p.AddStageFunc("transform", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("transform", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 		data["transformed"] = true
 		// Simulate data transformation
@@ -358,7 +358,7 @@ func Example_complexWorkflow() {
 	})
 
 	// Stage 4: Finalize
-	p.AddStageFunc("finalize", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("finalize", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 		return fmt.Sprintf("Final result: %s", data["processed"]), nil
 	})

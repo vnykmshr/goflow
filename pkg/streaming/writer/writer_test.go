@@ -72,7 +72,7 @@ func (mw *mockWriter) WriteCount() int {
 func TestNew(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	testutil.AssertEqual(t, writer.IsClosed(), false)
 	testutil.AssertEqual(t, writer.BufferSize(), 0)
@@ -90,7 +90,7 @@ func TestNewWithConfig(t *testing.T) {
 	}
 
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	testutil.AssertEqual(t, writer.IsClosed(), false)
 	testutil.AssertEqual(t, writer.BufferCapacity(), 1024)
@@ -99,7 +99,7 @@ func TestNewWithConfig(t *testing.T) {
 func TestBasicWrite(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write some data
 	data := []byte("Hello, World!")
@@ -116,7 +116,7 @@ func TestBasicWrite(t *testing.T) {
 func TestWriteString(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	err := writer.WriteString("Hello, World!")
 	testutil.AssertNoError(t, err)
@@ -130,7 +130,7 @@ func TestWriteString(t *testing.T) {
 func TestMultipleWrites(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write multiple pieces of data
 	writes := []string{"Hello", ", ", "World", "!"}
@@ -154,7 +154,7 @@ func TestAsyncWrite(t *testing.T) {
 	config := DefaultConfig()
 	config.BlockOnFull = false
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write should return immediately even with slow underlying writer
 	start := time.Now()
@@ -178,7 +178,7 @@ func TestBuffering(t *testing.T) {
 	config := DefaultConfig()
 	config.FlushInterval = 0 // Disable automatic flushing
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data but don't flush
 	err := writer.WriteString("buffered data")
@@ -202,7 +202,7 @@ func TestAutoFlush(t *testing.T) {
 	config := DefaultConfig()
 	config.FlushInterval = 50 * time.Millisecond
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data
 	err := writer.WriteString("auto flush test")
@@ -221,7 +221,7 @@ func TestBufferFull(t *testing.T) {
 	config.BufferSize = 10 // Small buffer
 	config.BlockOnFull = false
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Fill buffer beyond capacity
 	largeData := strings.Repeat("x", 20)
@@ -241,7 +241,7 @@ func TestBlockOnFull(t *testing.T) {
 	config.BufferSize = 10 // Small buffer
 	config.BlockOnFull = true
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// This should eventually succeed by triggering flushes
 	largeData := strings.Repeat("x", 20)
@@ -263,7 +263,7 @@ func TestWriteErrors(t *testing.T) {
 	config := DefaultConfig()
 	config.MaxRetries = 0 // No retries for faster test
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	err := writer.WriteString("test")
 	testutil.AssertNoError(t, err) // Write itself succeeds (async)
@@ -284,7 +284,7 @@ func TestRetries(t *testing.T) {
 	config.MaxRetries = 2
 	config.RetryDelay = 10 * time.Millisecond
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	err := writer.WriteString("retry test")
 	testutil.AssertNoError(t, err)
@@ -300,7 +300,7 @@ func TestRetries(t *testing.T) {
 func TestContextCancellation(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Create context that will be canceled
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
@@ -319,7 +319,7 @@ func TestContextCancellation(t *testing.T) {
 func TestStats(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Initial stats
 	stats := writer.Stats()
@@ -368,7 +368,7 @@ func TestClose(t *testing.T) {
 func TestConcurrentWrites(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	const numGoroutines = 10
 	const writesPerGoroutine = 100
@@ -424,11 +424,11 @@ func TestCallbacks(t *testing.T) {
 		}
 
 		writer := NewWithConfig(underlying, config)
-		defer writer.Close()
+		defer func() { _ = writer.Close() }()
 
 		// Test buffer full callback
 		largeData := strings.Repeat("x", 10)
-		writer.WriteString(largeData) // Should trigger buffer full
+		_ = writer.WriteString(largeData) // Should trigger buffer full
 
 		testutil.AssertEqual(t, bufferFullCalled, true)
 	})
@@ -440,13 +440,13 @@ func TestCallbacks(t *testing.T) {
 		var flushBytes int
 
 		config := DefaultConfig()
-		config.OnFlush = func(bytes int, duration time.Duration) {
+		config.OnFlush = func(bytes int, _ time.Duration) {
 			flushCalled = true
 			flushBytes = bytes
 		}
 
 		writer := NewWithConfig(underlying, config)
-		defer writer.Close()
+		defer func() { _ = writer.Close() }()
 
 		// Write data and flush
 		err := writer.WriteString("test")
@@ -467,12 +467,12 @@ func TestCallbacks(t *testing.T) {
 		var errorCalled bool
 
 		config := DefaultConfig()
-		config.OnError = func(err error) {
+		config.OnError = func(_ error) {
 			errorCalled = true
 		}
 
 		writer := NewWithConfig(underlying, config)
-		defer writer.Close()
+		defer func() { _ = writer.Close() }()
 
 		// Write and flush should trigger error callback
 		err := writer.WriteString("error test")
@@ -491,7 +491,7 @@ func TestCallbacks(t *testing.T) {
 func TestEmptyWrites(t *testing.T) {
 	underlying := newMockWriter()
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Empty writes should be no-ops
 	err := writer.Write(nil)
@@ -518,7 +518,7 @@ func TestLargeWrites(t *testing.T) {
 	config := DefaultConfig()
 	config.BufferSize = 1024 // 1KB buffer
 	writer := NewWithConfig(underlying, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data larger than buffer
 	largeData := strings.Repeat("x", 2048) // 2KB
@@ -535,46 +535,46 @@ func TestLargeWrites(t *testing.T) {
 func BenchmarkWrite(b *testing.B) {
 	underlying := &bytes.Buffer{}
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	data := []byte("benchmark data")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		writer.Write(data)
+		_ = writer.Write(data)
 	}
 
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 }
 
 func BenchmarkWriteString(b *testing.B) {
 	underlying := &bytes.Buffer{}
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	data := "benchmark data string"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		writer.WriteString(data)
+		_ = writer.WriteString(data)
 	}
 
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 }
 
 func BenchmarkConcurrentWrites(b *testing.B) {
 	underlying := &bytes.Buffer{}
 	writer := New(underlying)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	data := []byte("concurrent benchmark data")
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			writer.Write(data)
+			_ = writer.Write(data)
 		}
 	})
 
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 }

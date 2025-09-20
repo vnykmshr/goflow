@@ -19,7 +19,7 @@ func TestScheduler_BasicScheduling(t *testing.T) {
 	}
 
 	var executed int32
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		atomic.AddInt32(&executed, 1)
 		return nil
 	})
@@ -50,7 +50,7 @@ func TestScheduler_RepeatingTask(t *testing.T) {
 	}
 
 	var executed int32
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		atomic.AddInt32(&executed, 1)
 		return nil
 	})
@@ -75,7 +75,7 @@ func TestScheduler_CronScheduling(t *testing.T) {
 	}
 
 	var executed int32
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		atomic.AddInt32(&executed, 1)
 		return nil
 	})
@@ -96,7 +96,7 @@ func TestScheduler_TaskManagement(t *testing.T) {
 	s := New()
 	defer func() { <-s.Stop() }()
 
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		return nil
 	})
 
@@ -132,7 +132,7 @@ func TestScheduler_TaskManagement(t *testing.T) {
 
 func TestBackoffTask(t *testing.T) {
 	attempts := 0
-	failingTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	failingTask := workerpool.TaskFunc(func(_ context.Context) error {
 		attempts++
 		if attempts < 3 {
 			return errors.New("temporary failure")
@@ -161,7 +161,7 @@ func TestBackoffTask(t *testing.T) {
 
 func TestScheduler_InputValidation(t *testing.T) {
 	s := New()
-	task := workerpool.TaskFunc(func(ctx context.Context) error { return nil })
+	task := workerpool.TaskFunc(func(_ context.Context) error { return nil })
 
 	tests := []struct {
 		name string

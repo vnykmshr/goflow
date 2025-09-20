@@ -1,3 +1,4 @@
+// Package testutil provides common testing utilities for the goflow library.
 package testutil
 
 import (

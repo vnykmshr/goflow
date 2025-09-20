@@ -312,7 +312,7 @@ func (s *stream[T]) ForEach(ctx context.Context, action func(T)) error {
 		return ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -344,7 +344,7 @@ func (s *stream[T]) ToSlice(ctx context.Context) ([]T, error) {
 		return nil, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -377,7 +377,7 @@ func (s *stream[T]) Count(ctx context.Context) (int64, error) {
 		return 0, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -410,7 +410,7 @@ func (s *stream[T]) Reduce(ctx context.Context, identity T, accumulator func(T, 
 		return identity, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -438,12 +438,12 @@ func (s *stream[T]) Reduce(ctx context.Context, identity T, accumulator func(T, 
 }
 
 // Collect implementation
-func (s *stream[T]) Collect(ctx context.Context, supplier func() interface{}, accumulator func(interface{}, T), combiner func(interface{}, interface{}) interface{}) (interface{}, error) {
+func (s *stream[T]) Collect(ctx context.Context, supplier func() interface{}, accumulator func(interface{}, T), _ func(interface{}, interface{}) interface{}) (interface{}, error) {
 	if s.IsClosed() {
 		return nil, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -477,7 +477,7 @@ func (s *stream[T]) FindFirst(ctx context.Context) (T, bool, error) {
 		return zero, false, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -514,7 +514,7 @@ func (s *stream[T]) AnyMatch(ctx context.Context, predicate func(T) bool) (bool,
 		return false, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -548,7 +548,7 @@ func (s *stream[T]) AllMatch(ctx context.Context, predicate func(T) bool) (bool,
 		return true, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
@@ -589,14 +589,14 @@ func (s *stream[T]) Min(ctx context.Context, compare func(a, b T) int) (T, bool,
 		return zero, false, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
 		return zero, false, err
 	}
 
-	var min T
+	var minValue T
 	found := false
 
 	for element := range ch {
@@ -611,14 +611,14 @@ func (s *stream[T]) Min(ctx context.Context, compare func(a, b T) int) (T, bool,
 		case <-ctx.Done():
 			return zero, false, ctx.Err()
 		default:
-			if !found || compare(element.value, min) < 0 {
-				min = element.value
+			if !found || compare(element.value, minValue) < 0 {
+				minValue = element.value
 				found = true
 			}
 		}
 	}
 
-	return min, found, nil
+	return minValue, found, nil
 }
 
 // Max implementation
@@ -628,14 +628,14 @@ func (s *stream[T]) Max(ctx context.Context, compare func(a, b T) int) (T, bool,
 		return zero, false, ErrStreamClosed
 	}
 
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	ch, err := s.execute(ctx)
 	if err != nil {
 		return zero, false, err
 	}
 
-	var max T
+	var maxValue T
 	found := false
 
 	for element := range ch {
@@ -650,14 +650,14 @@ func (s *stream[T]) Max(ctx context.Context, compare func(a, b T) int) (T, bool,
 		case <-ctx.Done():
 			return zero, false, ctx.Err()
 		default:
-			if !found || compare(element.value, max) > 0 {
-				max = element.value
+			if !found || compare(element.value, maxValue) > 0 {
+				maxValue = element.value
 				found = true
 			}
 		}
 	}
 
-	return max, found, nil
+	return maxValue, found, nil
 }
 
 // Close implementation

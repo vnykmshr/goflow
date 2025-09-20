@@ -10,7 +10,7 @@ import (
 func Example() {
 	// Create a stream from a slice
 	stream := FromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Chain operations: filter even numbers, multiply by 2, take first 3
 	result, err := stream.
@@ -34,7 +34,7 @@ func Example_dataProcessing() {
 	users := []string{"john.doe", "jane.smith", "bob.wilson", "alice.brown"}
 
 	stream := FromSlice(users)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Process names: convert to proper case and create email addresses
 	emails, err := stream.
@@ -86,7 +86,7 @@ func Example_aggregation() {
 	fmt.Printf("Sum: %d\n", sum)
 
 	// Find min and max
-	min, found, _ := FromSlice(numbers).Min(context.Background(), func(a, b int) int {
+	minValue, found, _ := FromSlice(numbers).Min(context.Background(), func(a, b int) int {
 		if a < b {
 			return -1
 		}
@@ -96,10 +96,10 @@ func Example_aggregation() {
 		return 0
 	})
 	if found {
-		fmt.Printf("Min: %d\n", min)
+		fmt.Printf("Min: %d\n", minValue)
 	}
 
-	max, found, _ := FromSlice(numbers).Max(context.Background(), func(a, b int) int {
+	maxValue, found, _ := FromSlice(numbers).Max(context.Background(), func(a, b int) int {
 		if a < b {
 			return -1
 		}
@@ -109,7 +109,7 @@ func Example_aggregation() {
 		return 0
 	})
 	if found {
-		fmt.Printf("Max: %d\n", max)
+		fmt.Printf("Max: %d\n", maxValue)
 	}
 
 	// Check if any/all numbers meet criteria
@@ -138,7 +138,7 @@ func Example_textProcessing() {
 	words := strings.Fields(text)
 
 	stream := FromSlice(words)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Process words: filter long words, convert to uppercase, sort
 	processedWords, err := stream.
@@ -161,7 +161,7 @@ func Example_textProcessing() {
 func Example_numbers() {
 	// Generate stream of numbers and process them
 	stream := FromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Find squares of even numbers, skip first 2, limit to 3
 	result, err := stream.
@@ -185,7 +185,7 @@ func Example_collectToCustomType() {
 	words := []string{"hello", "world", "from", "stream", "api"}
 
 	stream := FromSlice(words)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Collect into a custom string with separators
 	result, err := stream.
@@ -231,7 +231,7 @@ func Example_channels() {
 	close(ch)
 
 	stream := FromChannel(ch)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Process fruits: filter by length and convert to uppercase
 	result, err := stream.
@@ -257,7 +257,7 @@ func Example_generator() {
 		counter++
 		return counter
 	})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Take first 5 even squares
 	result, err := stream.
@@ -280,7 +280,7 @@ func Example_peek() {
 	fmt.Println("Processing numbers:")
 
 	stream := FromSlice([]int{1, 2, 3, 4, 5})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.
 		Peek(func(x int) { fmt.Printf("Original: %d\n", x) }).
@@ -314,7 +314,7 @@ func Example_peek() {
 func Example_flatMap() {
 	// Each number generates a range from 1 to that number
 	stream := FromSlice([]int{2, 3, 4})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.
 		FlatMap(func(n int) Stream[int] {
@@ -343,7 +343,7 @@ func Example_wordCount() {
 
 	// Count word frequencies using collect
 	stream := FromSlice(words)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	wordCount, err := stream.
 		Map(func(word string) string { return strings.ToLower(word) }). // Normalize case

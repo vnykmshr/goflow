@@ -76,7 +76,7 @@ func (s *generatorSource[T]) Close() error {
 // emptySource implements Source for empty streams.
 type emptySource[T any] struct{}
 
-func (s *emptySource[T]) Next(ctx context.Context) (T, bool, error) {
+func (s *emptySource[T]) Next(_ context.Context) (T, bool, error) {
 	var zero T
 	return zero, false, nil
 }

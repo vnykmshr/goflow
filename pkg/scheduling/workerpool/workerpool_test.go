@@ -13,7 +13,7 @@ func TestWorkerPool_BasicExecution(t *testing.T) {
 	defer func() { <-pool.Shutdown() }()
 
 	var executed int32
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		atomic.AddInt32(&executed, 1)
 		return nil
 	})
@@ -35,7 +35,7 @@ func TestWorkerPool_MultipleTasksExecution(t *testing.T) {
 	defer func() { <-pool.Shutdown() }()
 
 	var executed int32
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		atomic.AddInt32(&executed, 1)
 		time.Sleep(5 * time.Millisecond) // Simulate work
 		return nil
@@ -67,7 +67,7 @@ func TestWorkerPool_TaskWithError(t *testing.T) {
 	defer func() { <-pool.Shutdown() }()
 
 	expectedErr := errors.New("test error")
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		return expectedErr
 	})
 
@@ -134,12 +134,12 @@ func TestWorkerPool_Stats(t *testing.T) {
 		t.Errorf("expected non-negative queue size, got %d", pool.QueueSize())
 	}
 
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
 
-	pool.Submit(task)
+	_ = pool.Submit(task)
 
 	// Just verify basic functionality works
 	time.Sleep(50 * time.Millisecond)
@@ -149,7 +149,7 @@ func TestWorkerPool_SubmitAfterShutdown(t *testing.T) {
 	pool := New(1, 5)
 	<-pool.Shutdown()
 
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		return nil
 	})
 
@@ -163,7 +163,7 @@ func TestWorkerPool_PanicRecovery(t *testing.T) {
 	pool := New(1, 5)
 	defer func() { <-pool.Shutdown() }()
 
-	task := TaskFunc(func(ctx context.Context) error {
+	task := TaskFunc(func(_ context.Context) error {
 		panic("test panic")
 	})
 

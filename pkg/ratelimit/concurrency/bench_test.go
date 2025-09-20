@@ -185,7 +185,7 @@ func BenchmarkWakeupPerformance(b *testing.B) {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			limiter.Wait(ctx)
+			_ = limiter.Wait(ctx)
 			limiter.Release() // Release immediately
 			close(done)
 		}()

@@ -11,14 +11,14 @@ import (
 func Example() {
 	// Create a channel with buffer size 3
 	ch := New[int](3)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Send some values
-	ch.Send(ctx, 1)
-	ch.Send(ctx, 2)
-	ch.Send(ctx, 3)
+	_ = ch.Send(ctx, 1)
+	_ = ch.Send(ctx, 2)
+	_ = ch.Send(ctx, 3)
 
 	fmt.Printf("Channel length: %d\n", ch.Len())
 
@@ -42,13 +42,13 @@ func Example_blockStrategy() {
 		Strategy:   Block,
 	}
 	ch := NewWithConfig[string](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Fill the buffer
-	ch.Send(ctx, "first")
-	ch.Send(ctx, "second")
+	_ = ch.Send(ctx, "first")
+	_ = ch.Send(ctx, "second")
 
 	fmt.Printf("Buffer full: %d/%d\n", ch.Len(), ch.Cap())
 
@@ -58,7 +58,7 @@ func Example_blockStrategy() {
 	go func() {
 		defer wg.Done()
 		fmt.Println("Attempting to send (will block)...")
-		ch.Send(ctx, "third")
+		_ = ch.Send(ctx, "third")
 		fmt.Println("Send unblocked!")
 	}()
 
@@ -92,17 +92,17 @@ func Example_dropStrategy() {
 		},
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Fill buffer
-	ch.Send(ctx, 1)
-	ch.Send(ctx, 2)
+	_ = ch.Send(ctx, 1)
+	_ = ch.Send(ctx, 2)
 
 	// These will be dropped
-	ch.Send(ctx, 3)
-	ch.Send(ctx, 4)
+	_ = ch.Send(ctx, 3)
+	_ = ch.Send(ctx, 4)
 
 	fmt.Printf("Buffer contents: %d items\n", ch.Len())
 
@@ -135,18 +135,18 @@ func Example_dropOldestStrategy() {
 		},
 	}
 	ch := NewWithConfig[string](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Fill buffer
-	ch.Send(ctx, "old1")
-	ch.Send(ctx, "old2")
-	ch.Send(ctx, "old3")
+	_ = ch.Send(ctx, "old1")
+	_ = ch.Send(ctx, "old2")
+	_ = ch.Send(ctx, "old3")
 
 	// These will cause oldest to be dropped
-	ch.Send(ctx, "new1")
-	ch.Send(ctx, "new2")
+	_ = ch.Send(ctx, "new1")
+	_ = ch.Send(ctx, "new2")
 
 	fmt.Printf("Buffer contents: %d items\n", ch.Len())
 
@@ -172,13 +172,13 @@ func Example_errorStrategy() {
 		Strategy:   Error,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Fill buffer
-	ch.Send(ctx, 1)
-	ch.Send(ctx, 2)
+	_ = ch.Send(ctx, 1)
+	_ = ch.Send(ctx, 2)
 
 	fmt.Printf("Buffer full: %d/%d\n", ch.Len(), ch.Cap())
 
@@ -217,7 +217,7 @@ func Example_contextCancellation() {
 // Example_trySendReceive demonstrates non-blocking operations.
 func Example_trySendReceive() {
 	ch := New[string](2)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	// TrySend succeeds when buffer has space
 	err := ch.TrySend("hello")
@@ -246,17 +246,17 @@ func Example_trySendReceive() {
 // Example_statistics demonstrates monitoring channel performance.
 func Example_statistics() {
 	ch := New[int](5)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 
 	// Perform some operations
 	for i := 0; i < 3; i++ {
-		ch.Send(ctx, i)
+		_ = ch.Send(ctx, i)
 	}
 
 	for i := 0; i < 2; i++ {
-		ch.Receive(ctx)
+		_, _ = ch.Receive(ctx)
 	}
 
 	// Get statistics
@@ -278,7 +278,7 @@ func Example_statistics() {
 // Example_producerConsumer demonstrates a producer-consumer pattern.
 func Example_producerConsumer() {
 	ch := New[int](10)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	ctx := context.Background()
 	var wg sync.WaitGroup
@@ -288,7 +288,7 @@ func Example_producerConsumer() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 5; i++ {
-			ch.Send(ctx, i*i)
+			_ = ch.Send(ctx, i*i)
 			fmt.Printf("Produced: %d\n", i*i)
 		}
 	}()
@@ -329,7 +329,7 @@ func Example_withTimeout() {
 		ReceiveTimeout: 50 * time.Millisecond,
 	}
 	ch := NewWithConfig[int](config)
-	defer ch.Close()
+	defer func() { _ = ch.Close() }()
 
 	// Fill buffer first
 	err := ch.TrySend(1)
@@ -376,8 +376,8 @@ func Example_workerpool() {
 
 	jobs := New[int](5) // Limited buffer creates backpressure
 	results := New[int](numJobs)
-	defer jobs.Close()
-	defer results.Close()
+	defer func() { _ = jobs.Close() }()
+	defer func() { _ = results.Close() }()
 
 	ctx := context.Background()
 	var wg sync.WaitGroup
@@ -394,7 +394,7 @@ func Example_workerpool() {
 				}
 				// Simulate work
 				result := job * 2
-				results.Send(ctx, result)
+				_ = results.Send(ctx, result)
 				fmt.Printf("Worker %d processed job %d -> %d\n", workerID, job, result)
 			}
 		}(w)
@@ -404,9 +404,9 @@ func Example_workerpool() {
 	go func() {
 		for j := 0; j < numJobs; j++ {
 			fmt.Printf("Submitting job %d\n", j)
-			jobs.Send(ctx, j)
+			_ = jobs.Send(ctx, j)
 		}
-		jobs.Close()
+		_ = jobs.Close()
 	}()
 
 	// Collect results
@@ -415,7 +415,7 @@ func Example_workerpool() {
 			result, _ := results.Receive(ctx)
 			fmt.Printf("Result: %d\n", result)
 		}
-		results.Close()
+		_ = results.Close()
 	}()
 
 	wg.Wait()
@@ -430,7 +430,7 @@ func Example_workerpool() {
 func Example_rateLimiting() {
 	// Create a small buffer to limit concurrent operations
 	limiter := New[struct{}](2)
-	defer limiter.Close()
+	defer func() { _ = limiter.Close() }()
 
 	ctx := context.Background()
 	var wg sync.WaitGroup
@@ -442,10 +442,10 @@ func Example_rateLimiting() {
 			defer wg.Done()
 
 			// Acquire permit
-			limiter.Send(ctx, struct{}{})
+			_ = limiter.Send(ctx, struct{}{})
 			defer func() {
 				// Release permit
-				limiter.Receive(ctx)
+				_, _ = limiter.Receive(ctx)
 			}()
 
 			// Simulate work

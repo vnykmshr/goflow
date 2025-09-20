@@ -12,7 +12,7 @@ import (
 func TestFromSlice(t *testing.T) {
 	slice := []int{1, 2, 3, 4, 5}
 	stream := FromSlice(slice)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -23,7 +23,7 @@ func TestFromSlice(t *testing.T) {
 
 func TestEmpty(t *testing.T) {
 	stream := Empty[int]()
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -42,7 +42,7 @@ func TestFromChannel(t *testing.T) {
 	close(ch)
 
 	stream := FromChannel(ch)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -55,7 +55,7 @@ func TestFromChannel(t *testing.T) {
 func TestFilter(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).
 		Filter(func(x int) bool { return x%2 == 0 })
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -67,7 +67,7 @@ func TestFilter(t *testing.T) {
 func TestMap(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3, 4, 5}).
 		Map(func(x int) int { return x * 2 })
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -79,7 +79,7 @@ func TestMap(t *testing.T) {
 func TestMapTo(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3}).
 		MapTo(func(x int) interface{} { return fmt.Sprintf("number-%d", x) })
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -94,7 +94,7 @@ func TestChainedOperations(t *testing.T) {
 		Map(func(x int) int { return x * 3 }).        // 6, 12, 18, 24, 30
 		Skip(1).                                      // 12, 18, 24, 30
 		Limit(2)                                      // 12, 18
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -106,7 +106,7 @@ func TestChainedOperations(t *testing.T) {
 func TestDistinct(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 2, 3, 3, 3, 4, 4, 5}).
 		Distinct()
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -129,7 +129,7 @@ func TestSorted(t *testing.T) {
 			}
 			return 0
 		})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -144,7 +144,7 @@ func TestSorted(t *testing.T) {
 func TestSkipAndLimit(t *testing.T) {
 	// Test Skip
 	stream := FromSlice([]int{1, 2, 3, 4, 5}).Skip(2)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -153,7 +153,7 @@ func TestSkipAndLimit(t *testing.T) {
 
 	// Test Limit
 	stream = FromSlice([]int{1, 2, 3, 4, 5}).Limit(3)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err = stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -168,7 +168,7 @@ func TestPeek(t *testing.T) {
 		Peek(func(x int) {
 			peeked = append(peeked, x)
 		})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -193,7 +193,7 @@ func TestForEach(t *testing.T) {
 
 func TestReduce(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3, 4, 5})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	sum, err := stream.Reduce(context.Background(), 0, func(acc, x int) int {
 		return acc + x
@@ -204,7 +204,7 @@ func TestReduce(t *testing.T) {
 
 func TestCollect(t *testing.T) {
 	stream := FromSlice([]string{"hello", "world", "test"})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.Collect(
 		context.Background(),
@@ -228,7 +228,7 @@ func TestCollect(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	stream := FromSlice([]string{"a", "b", "c", "d"})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	count, err := stream.Count(context.Background())
 	testutil.AssertNoError(t, err)
@@ -238,7 +238,7 @@ func TestCount(t *testing.T) {
 func TestFindFirst(t *testing.T) {
 	// Test with non-empty stream
 	stream := FromSlice([]int{10, 20, 30})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	value, found, err := stream.FindFirst(context.Background())
 	testutil.AssertNoError(t, err)
@@ -247,7 +247,7 @@ func TestFindFirst(t *testing.T) {
 
 	// Test with empty stream
 	stream = Empty[int]()
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	value, found, err = stream.FindFirst(context.Background())
 	testutil.AssertNoError(t, err)
@@ -257,7 +257,7 @@ func TestFindFirst(t *testing.T) {
 
 func TestAnyMatch(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3, 4, 5})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Should find even number
 	hasEven, err := stream.AnyMatch(context.Background(), func(x int) bool {
@@ -269,7 +269,7 @@ func TestAnyMatch(t *testing.T) {
 
 func TestAllMatch(t *testing.T) {
 	stream := FromSlice([]int{2, 4, 6, 8})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// All are even
 	allEven, err := stream.AllMatch(context.Background(), func(x int) bool {
@@ -279,7 +279,7 @@ func TestAllMatch(t *testing.T) {
 	testutil.AssertEqual(t, allEven, true)
 
 	stream = FromSlice([]int{1, 2, 3, 4})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// Not all are even
 	allEven, err = stream.AllMatch(context.Background(), func(x int) bool {
@@ -291,7 +291,7 @@ func TestAllMatch(t *testing.T) {
 
 func TestNoneMatch(t *testing.T) {
 	stream := FromSlice([]int{1, 3, 5, 7})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// None are even
 	noneEven, err := stream.NoneMatch(context.Background(), func(x int) bool {
@@ -319,7 +319,7 @@ func TestMinMax(t *testing.T) {
 
 	// Test Max (need new stream since first one is consumed)
 	stream = FromSlice([]int{5, 2, 8, 1, 9, 3})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	maxVal, found, err := stream.Max(context.Background(), func(a, b int) int {
 		if a < b {
@@ -344,7 +344,7 @@ func TestContextCancellation(t *testing.T) {
 		time.Sleep(50 * time.Millisecond) // Slow operation
 		return 1
 	}).Limit(100)
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	// This should be canceled due to context timeout
 	_, err := stream.Count(ctx)
@@ -380,7 +380,7 @@ func TestConcurrentAccess(t *testing.T) {
 			stream := FromSlice([]int{1, 2, 3, 4, 5}).
 				Map(func(x int) int { return x * id }).
 				Filter(func(x int) bool { return x > 0 })
-			defer stream.Close()
+			defer func() { _ = stream.Close() }()
 
 			result, err := stream.ToSlice(context.Background())
 			if err != nil {
@@ -405,7 +405,7 @@ func TestFlatMap(t *testing.T) {
 		FlatMap(func(x int) Stream[int] {
 			return FromSlice([]int{x, x}) // Each number appears twice
 		})
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)
@@ -422,7 +422,7 @@ func TestGenerateInfinite(t *testing.T) {
 		counter++
 		return counter
 	}).Limit(5) // Limit to avoid infinite execution
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	result, err := stream.ToSlice(context.Background())
 	testutil.AssertNoError(t, err)

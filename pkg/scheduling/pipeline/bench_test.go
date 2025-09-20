@@ -12,14 +12,14 @@ import (
 func BenchmarkBasicExecution(b *testing.B) {
 	p := New()
 
-	stage := NewStageFunc("bench", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("bench", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 	p.AddStage(stage)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 	}
 }
 
@@ -30,7 +30,7 @@ func BenchmarkMultiStageExecution(b *testing.B) {
 	// Add 5 stages
 	for i := 0; i < 5; i++ {
 		stageName := "stage-" + string(rune(i+'0'))
-		stage := NewStageFunc(stageName, func(ctx context.Context, input interface{}) (interface{}, error) {
+		stage := NewStageFunc(stageName, func(_ context.Context, input interface{}) (interface{}, error) {
 			if str, ok := input.(string); ok {
 				return str + "-processed", nil
 			}
@@ -41,7 +41,7 @@ func BenchmarkMultiStageExecution(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 	}
 }
 
@@ -50,7 +50,7 @@ func BenchmarkAsyncExecution(b *testing.B) {
 	p := New()
 
 	var counter int64
-	stage := NewStageFunc("async", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("async", func(_ context.Context, input interface{}) (interface{}, error) {
 		atomic.AddInt64(&counter, 1)
 		return input, nil
 	})
@@ -71,20 +71,20 @@ func BenchmarkWorkerPoolExecution(b *testing.B) {
 	// Consume worker pool results
 	go func() {
 		for range pool.Results() {
-			// Consume results
+			_ = 1 // Consume results
 		}
 	}()
 
 	p := New().SetWorkerPool(pool)
 
-	stage := NewStageFunc("worker", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("worker", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 	p.AddStage(stage)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 	}
 }
 
@@ -95,7 +95,7 @@ func BenchmarkPipelineCreation(b *testing.B) {
 		p := New()
 		for j := 0; j < 10; j++ {
 			stageName := "stage-" + string(rune(j+'0'))
-			stage := NewStageFunc(stageName, func(ctx context.Context, input interface{}) (interface{}, error) {
+			stage := NewStageFunc(stageName, func(_ context.Context, input interface{}) (interface{}, error) {
 				return input, nil
 			})
 			p.AddStage(stage)
@@ -108,7 +108,7 @@ func BenchmarkConcurrentExecution(b *testing.B) {
 	p := New()
 
 	var counter int64
-	stage := NewStageFunc("concurrent", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("concurrent", func(_ context.Context, input interface{}) (interface{}, error) {
 		atomic.AddInt64(&counter, 1)
 		return input, nil
 	})
@@ -117,7 +117,7 @@ func BenchmarkConcurrentExecution(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			p.Execute(context.Background(), "input")
+			_, _ = p.Execute(context.Background(), "input")
 		}
 	})
 }
@@ -127,14 +127,14 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	b.ReportAllocs()
 
 	p := New()
-	stage := NewStageFunc("memory", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("memory", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 	p.AddStage(stage)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 	}
 }
 
@@ -148,7 +148,7 @@ func BenchmarkStageScaling(b *testing.B) {
 
 			for i := 0; i < stageCount; i++ {
 				stageName := "stage-" + string(rune(i+'0'))
-				stage := NewStageFunc(stageName, func(ctx context.Context, input interface{}) (interface{}, error) {
+				stage := NewStageFunc(stageName, func(_ context.Context, input interface{}) (interface{}, error) {
 					return input, nil
 				})
 				p.AddStage(stage)
@@ -156,7 +156,7 @@ func BenchmarkStageScaling(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				p.Execute(context.Background(), "input")
+				_, _ = p.Execute(context.Background(), "input")
 			}
 		})
 	}
@@ -166,14 +166,14 @@ func BenchmarkStageScaling(b *testing.B) {
 func BenchmarkErrorHandling(b *testing.B) {
 	p := New()
 
-	stage := NewStageFunc("error", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("error", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil // No error for fair comparison
 	})
 	p.AddStage(stage)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 	}
 }
 
@@ -183,37 +183,37 @@ func BenchmarkWithCallbacks(b *testing.B) {
 
 	b.Run("WithCallbacks", func(b *testing.B) {
 		config := Config{
-			OnStageStart: func(stageName string, input interface{}) {
+			OnStageStart: func(_ string, _ interface{}) {
 				atomic.AddInt64(&callbackCount, 1)
 			},
-			OnStageComplete: func(result StageResult) {
+			OnStageComplete: func(_ StageResult) {
 				atomic.AddInt64(&callbackCount, 1)
 			},
 		}
 		p := NewWithConfig(config)
 
-		stage := NewStageFunc("callback", func(ctx context.Context, input interface{}) (interface{}, error) {
+		stage := NewStageFunc("callback", func(_ context.Context, input interface{}) (interface{}, error) {
 			return input, nil
 		})
 		p.AddStage(stage)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			p.Execute(context.Background(), "input")
+			_, _ = p.Execute(context.Background(), "input")
 		}
 	})
 
 	b.Run("WithoutCallbacks", func(b *testing.B) {
 		p := New()
 
-		stage := NewStageFunc("no-callback", func(ctx context.Context, input interface{}) (interface{}, error) {
+		stage := NewStageFunc("no-callback", func(_ context.Context, input interface{}) (interface{}, error) {
 			return input, nil
 		})
 		p.AddStage(stage)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			p.Execute(context.Background(), "input")
+			_, _ = p.Execute(context.Background(), "input")
 		}
 	})
 }
@@ -223,12 +223,12 @@ func BenchmarkDataThroughput(b *testing.B) {
 	p := New()
 
 	// Simulate data processing stages
-	stage1 := NewStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage1 := NewStageFunc("validate", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Simulate validation work
 		return input, nil
 	})
 
-	stage2 := NewStageFunc("transform", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage2 := NewStageFunc("transform", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Simulate transformation work
 		if str, ok := input.(string); ok {
 			return str + "-transformed", nil
@@ -236,7 +236,7 @@ func BenchmarkDataThroughput(b *testing.B) {
 		return input, nil
 	})
 
-	stage3 := NewStageFunc("enrich", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage3 := NewStageFunc("enrich", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Simulate enrichment work
 		if str, ok := input.(string); ok {
 			return str + "-enriched", nil
@@ -249,7 +249,7 @@ func BenchmarkDataThroughput(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		input := "data-" + string(rune(i%100))
-		p.Execute(context.Background(), input)
+		_, _ = p.Execute(context.Background(), input)
 	}
 }
 
@@ -261,7 +261,7 @@ func BenchmarkComplexWorkflow(b *testing.B) {
 	// Consume worker pool results
 	go func() {
 		for range pool.Results() {
-			// Consume results
+			_ = 1 // Consume results
 		}
 	}()
 
@@ -272,7 +272,7 @@ func BenchmarkComplexWorkflow(b *testing.B) {
 
 	for _, stageName := range stages {
 		name := stageName // Capture for closure
-		stage := NewStageFunc(name, func(ctx context.Context, input interface{}) (interface{}, error) {
+		stage := NewStageFunc(name, func(_ context.Context, input interface{}) (interface{}, error) {
 			// Simulate some CPU work
 			sum := 0
 			for i := 0; i < 100; i++ {
@@ -290,7 +290,7 @@ func BenchmarkComplexWorkflow(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		input := "workflow-" + string(rune(i%10))
-		p.Execute(context.Background(), input)
+		_, _ = p.Execute(context.Background(), input)
 	}
 }
 
@@ -298,14 +298,14 @@ func BenchmarkComplexWorkflow(b *testing.B) {
 func BenchmarkStatsCollection(b *testing.B) {
 	p := New()
 
-	stage := NewStageFunc("stats", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("stats", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 	p.AddStage(stage)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), "input")
+		_, _ = p.Execute(context.Background(), "input")
 
 		// Occasionally check stats to measure overhead
 		if i%100 == 0 {
@@ -318,7 +318,7 @@ func BenchmarkStatsCollection(b *testing.B) {
 func BenchmarkLargePayload(b *testing.B) {
 	p := New()
 
-	stage := NewStageFunc("large", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("large", func(_ context.Context, input interface{}) (interface{}, error) {
 		// Simulate processing large data
 		if data, ok := input.([]byte); ok {
 			// Simple checksum calculation
@@ -340,7 +340,7 @@ func BenchmarkLargePayload(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Execute(context.Background(), payload)
+		_, _ = p.Execute(context.Background(), payload)
 	}
 }
 
@@ -348,7 +348,7 @@ func BenchmarkLargePayload(b *testing.B) {
 func BenchmarkPipelineReuse(b *testing.B) {
 	p := New()
 
-	stage := NewStageFunc("reuse", func(ctx context.Context, input interface{}) (interface{}, error) {
+	stage := NewStageFunc("reuse", func(_ context.Context, input interface{}) (interface{}, error) {
 		return input, nil
 	})
 	p.AddStage(stage)
@@ -358,7 +358,7 @@ func BenchmarkPipelineReuse(b *testing.B) {
 		i := 0
 		for pb.Next() {
 			input := "input-" + string(rune(i%10))
-			p.Execute(context.Background(), input)
+			_, _ = p.Execute(context.Background(), input)
 			i++
 		}
 	})

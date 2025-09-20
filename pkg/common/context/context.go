@@ -1,3 +1,4 @@
+// Package context provides context utilities and helpers for the goflow library.
 package context
 
 import (

@@ -28,6 +28,10 @@ import (
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
 )
 
+const (
+	httpMethodPOST = "POST"
+)
+
 // WebService demonstrates a production-ready web service using goflow
 type WebService struct {
 	// Rate limiting
@@ -124,7 +128,7 @@ func NewWebService(port string) (*WebService, error) {
 // setupDataPipeline configures a multi-stage data processing pipeline
 func setupDataPipeline(p pipeline.Pipeline) {
 	// Stage 1: Data validation and sanitization
-	p.AddStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("validate", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 
 		// Simulate validation
@@ -138,7 +142,7 @@ func setupDataPipeline(p pipeline.Pipeline) {
 	})
 
 	// Stage 2: Data enrichment
-	p.AddStageFunc("enrich", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("enrich", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 
 		// Simulate external API call for data enrichment
@@ -150,7 +154,7 @@ func setupDataPipeline(p pipeline.Pipeline) {
 	})
 
 	// Stage 3: Data transformation
-	p.AddStageFunc("transform", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("transform", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 
 		// Simulate business logic transformation
@@ -165,7 +169,7 @@ func setupDataPipeline(p pipeline.Pipeline) {
 	})
 
 	// Stage 4: Data persistence
-	p.AddStageFunc("persist", func(ctx context.Context, input interface{}) (interface{}, error) {
+	p.AddStageFunc("persist", func(_ context.Context, input interface{}) (interface{}, error) {
 		data := input.(map[string]interface{})
 
 		// Simulate database write
@@ -229,9 +233,9 @@ func (ws *WebService) withConcurrencyLimit(limiter concurrency.Limiter, handler 
 func (ws *WebService) handleUsers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		fmt.Fprintf(w, `{"users": [{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]}`)
-	case "POST":
-		fmt.Fprintf(w, `{"message": "User created", "id": 123}`)
+		_, _ = fmt.Fprintf(w, `{"users": [{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]}`)
+	case httpMethodPOST:
+		_, _ = fmt.Fprintf(w, `{"message": "User created", "id": 123}`)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -239,7 +243,7 @@ func (ws *WebService) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 // handleDataProcessing demonstrates pipeline integration
 func (ws *WebService) handleDataProcessing(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != httpMethodPOST {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -261,39 +265,39 @@ func (ws *WebService) handleDataProcessing(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Fprintf(w, `{"message": "Data processed successfully", "stages": %d, "duration": "%v"}`,
+	_, _ = fmt.Fprintf(w, `{"message": "Data processed successfully", "stages": %d, "duration": "%v"}`,
 		len(result.StageResults), result.Duration)
 }
 
 // handleUpload demonstrates upload handling with rate limiting
 func (ws *WebService) handleUpload(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != httpMethodPOST {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// Simulate file upload processing
 	time.Sleep(100 * time.Millisecond)
-	fmt.Fprintf(w, `{"message": "File uploaded successfully", "size": 1024}`)
+	_, _ = fmt.Fprintf(w, `{"message": "File uploaded successfully", "size": 1024}`)
 }
 
 // handleDatabaseQuery demonstrates database operations with concurrency limiting
-func (ws *WebService) handleDatabaseQuery(w http.ResponseWriter, r *http.Request) {
+func (ws *WebService) handleDatabaseQuery(w http.ResponseWriter, _ *http.Request) {
 	// Simulate database query
 	time.Sleep(50 * time.Millisecond)
-	fmt.Fprintf(w, `{"data": [{"id": 1, "value": "result1"}, {"id": 2, "value": "result2"}]}`)
+	_, _ = fmt.Fprintf(w, `{"data": [{"id": 1, "value": "result1"}, {"id": 2, "value": "result2"}]}`)
 }
 
 // handleCPUIntensive demonstrates CPU-intensive operations with concurrency limiting
-func (ws *WebService) handleCPUIntensive(w http.ResponseWriter, r *http.Request) {
+func (ws *WebService) handleCPUIntensive(w http.ResponseWriter, _ *http.Request) {
 	// Simulate CPU-intensive work
 	time.Sleep(200 * time.Millisecond)
-	fmt.Fprintf(w, `{"message": "Processing completed", "result": "processed_data"}`)
+	_, _ = fmt.Fprintf(w, `{"message": "Processing completed", "result": "processed_data"}`)
 }
 
 // handleTaskSubmission demonstrates background task submission
 func (ws *WebService) handleTaskSubmission(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != httpMethodPOST {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -317,11 +321,11 @@ func (ws *WebService) handleTaskSubmission(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Acknowledge submission
-	fmt.Fprintf(w, `{"message": "Task submitted successfully"}`)
+	_, _ = fmt.Fprintf(w, `{"message": "Task submitted successfully"}`)
 }
 
 // handleHealth provides health check endpoint
-func (ws *WebService) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (ws *WebService) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	health := map[string]interface{}{
 		"status":    "healthy",
 		"timestamp": time.Now().Unix(),
@@ -336,7 +340,7 @@ func (ws *WebService) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"health": %+v}`, health)
+	_, _ = fmt.Fprintf(w, `{"health": %+v}`, health)
 }
 
 // Start starts the web service and background tasks
@@ -377,7 +381,7 @@ func (ws *WebService) Start(ctx context.Context) error {
 // setupScheduledTasks configures periodic maintenance tasks
 func (ws *WebService) setupScheduledTasks() error {
 	// Schedule metrics cleanup task every 5 minutes
-	err := ws.taskScheduler.ScheduleRepeating("metrics-cleanup", workerpool.TaskFunc(func(ctx context.Context) error {
+	err := ws.taskScheduler.ScheduleRepeating("metrics-cleanup", workerpool.TaskFunc(func(_ context.Context) error {
 		log.Println("Running scheduled metrics cleanup task")
 		// Simulate metrics cleanup
 		return nil
@@ -387,7 +391,7 @@ func (ws *WebService) setupScheduledTasks() error {
 	}
 
 	// Schedule health check task every 30 seconds
-	err = ws.taskScheduler.ScheduleRepeating("health-check", workerpool.TaskFunc(func(ctx context.Context) error {
+	err = ws.taskScheduler.ScheduleRepeating("health-check", workerpool.TaskFunc(func(_ context.Context) error {
 		size := ws.backgroundWorkers.Size()
 		queueSize := ws.backgroundWorkers.QueueSize()
 		log.Printf("Health check - Workers: %d, Queued tasks: %d", size, queueSize)

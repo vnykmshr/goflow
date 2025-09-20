@@ -40,9 +40,7 @@ func BenchmarkReserve(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			r := limiter.Reserve()
-			if r.OK() && r.Delay() == 0 {
-				// Success case, no delay needed
-			}
+			_ = r.OK() && r.Delay() == 0
 		}
 	})
 }
@@ -55,7 +53,7 @@ func BenchmarkWait(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			limiter.Wait(ctx)
+			_ = limiter.Wait(ctx)
 		}
 	})
 }
@@ -109,7 +107,7 @@ func BenchmarkConcurrentMixed(b *testing.B) {
 			case 1:
 				limiter.AllowN(2)
 			case 2:
-				limiter.Wait(ctx)
+				_ = limiter.Wait(ctx)
 			case 3:
 				r := limiter.Reserve()
 				r.Cancel() // Cancel immediately to avoid affecting other operations
@@ -182,9 +180,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if limiter.Allow() {
-			// Request processed
-		}
+		_ = limiter.Allow()
 	}
 }
 
@@ -197,7 +193,7 @@ func BenchmarkReservationLifecycle(b *testing.B) {
 		r := limiter.Reserve()
 		if r.OK() {
 			if r.Delay() > 0 {
-				// Would need to wait
+				_ = r.Delay() // Would need to wait
 			}
 			r.Cancel() // Cancel to restore level
 		}

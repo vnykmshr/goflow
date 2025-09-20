@@ -18,15 +18,15 @@ func Example() {
 
 	// Create async writer with default configuration
 	writer := New(&buf)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data asynchronously - returns immediately
-	writer.WriteString("Hello, ")
-	writer.WriteString("async ")
-	writer.WriteString("world!")
+	_ = writer.WriteString("Hello, ")
+	_ = writer.WriteString("async ")
+	_ = writer.WriteString("world!")
 
 	// Flush to ensure all data is written
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 
 	fmt.Println(buf.String())
 	// Output: Hello, async world!
@@ -48,14 +48,14 @@ func Example_configuration() {
 	writer := NewWithConfig(&buf, config)
 
 	// Write data
-	writer.WriteString("Configured writer example")
+	_ = writer.WriteString("Configured writer example")
 
 	// Let auto-flush handle the writing
 	time.Sleep(150 * time.Millisecond)
 
 	// Ensure all background processing is complete
-	writer.Flush(context.Background())
-	writer.Close()
+	_ = writer.Flush(context.Background())
+	_ = writer.Close()
 
 	fmt.Println(buf.String())
 	// Output: Configured writer example
@@ -87,8 +87,8 @@ func Example_nonBlocking() {
 	}
 
 	// Flush the successful write
-	writer.Flush(context.Background())
-	writer.Close()
+	_ = writer.Flush(context.Background())
+	_ = writer.Close()
 	fmt.Printf("Buffer contains: %s\n", buf.String())
 
 	// Output:
@@ -102,7 +102,7 @@ func Example_callbacks() {
 	var buf bytes.Buffer
 
 	config := DefaultConfig()
-	config.OnFlush = func(bytes int, duration time.Duration) {
+	config.OnFlush = func(bytes int, _ time.Duration) {
 		fmt.Printf("Flushed %d bytes\n", bytes)
 	}
 	config.OnBufferFull = func() {
@@ -113,13 +113,13 @@ func Example_callbacks() {
 	}
 
 	writer := NewWithConfig(&buf, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write some data
-	writer.WriteString("Hello with callbacks")
+	_ = writer.WriteString("Hello with callbacks")
 
 	// Flush to trigger callback
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 
 	// Output:
 	// Flushed 20 bytes
@@ -129,15 +129,15 @@ func Example_callbacks() {
 func Example_statistics() {
 	var buf bytes.Buffer
 	writer := New(&buf)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Perform some writes
 	for i := 0; i < 5; i++ {
-		writer.WriteString(fmt.Sprintf("Write %d\n", i))
+		_ = writer.WriteString(fmt.Sprintf("Write %d\n", i))
 	}
 
 	// Flush and get stats
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 	stats := writer.Stats()
 
 	fmt.Printf("Writes: %d\n", stats.WriteCount)
@@ -161,22 +161,22 @@ func Example_fileWriting() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(file.Name()) // Clean up
+	defer func() { _ = os.Remove(file.Name()) }() // Clean up
 
 	// Create async writer for the file
 	writer := New(file)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data asynchronously
 	for i := 0; i < 3; i++ {
-		writer.WriteString(fmt.Sprintf("Line %d\n", i+1))
+		_ = writer.WriteString(fmt.Sprintf("Line %d\n", i+1))
 	}
 
 	// Flush to ensure data is written
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 
 	// Close the file
-	file.Close()
+	_ = file.Close()
 
 	// Read back and display
 	content, err := os.ReadFile(file.Name())
@@ -195,7 +195,7 @@ func Example_fileWriting() {
 func Example_concurrent() {
 	var buf bytes.Buffer
 	writer := New(&buf)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	var wg sync.WaitGroup
 	numGoroutines := 3
@@ -207,7 +207,7 @@ func Example_concurrent() {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < writesPerGoroutine; j++ {
-				writer.WriteString(fmt.Sprintf("G%d-W%d ", id, j))
+				_ = writer.WriteString(fmt.Sprintf("G%d-W%d ", id, j))
 			}
 		}(i)
 	}
@@ -215,7 +215,7 @@ func Example_concurrent() {
 	wg.Wait()
 
 	// Flush all writes
-	writer.Flush(context.Background())
+	_ = writer.Flush(context.Background())
 
 	result := buf.String()
 
@@ -242,10 +242,10 @@ func Example_errorHandling() {
 	config.RetryDelay = 1 * time.Millisecond
 
 	writer := NewWithConfig(failingWriter, config)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write data (will succeed after retries)
-	writer.WriteString("persistent data")
+	_ = writer.WriteString("persistent data")
 
 	err := writer.Flush(context.Background())
 	if err != nil {
@@ -264,10 +264,10 @@ func Example_errorHandling() {
 func Example_contextCancellation() {
 	var buf bytes.Buffer
 	writer := New(&buf)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write some data
-	writer.WriteString("context test")
+	_ = writer.WriteString("context test")
 
 	// Create a context that will timeout quickly
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
@@ -304,14 +304,14 @@ func Example_autoFlush() {
 	writer := NewWithConfig(&buf, config)
 
 	// Write data
-	writer.WriteString("auto-flush example")
+	_ = writer.WriteString("auto-flush example")
 
 	// Wait for auto-flush
 	time.Sleep(100 * time.Millisecond)
 
 	// Ensure all background processing is complete
-	writer.Flush(context.Background())
-	writer.Close()
+	_ = writer.Flush(context.Background())
+	_ = writer.Close()
 
 	// Data should be automatically written
 	fmt.Printf("Auto-flushed data: %s\n", buf.String())

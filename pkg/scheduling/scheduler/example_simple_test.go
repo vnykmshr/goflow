@@ -16,16 +16,16 @@ func ExampleScheduler_basic() {
 	defer func() { <-scheduler.Stop() }()
 
 	// Start the scheduler
-	scheduler.Start()
+	_ = scheduler.Start()
 
 	// Simple task
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Task executed")
 		return nil
 	})
 
 	// Schedule task to run in 100ms
-	scheduler.ScheduleAfter("simple-task", task, 100*time.Millisecond)
+	_ = scheduler.ScheduleAfter("simple-task", task, 100*time.Millisecond)
 
 	time.Sleep(200 * time.Millisecond)
 	// Output: Task executed
@@ -34,17 +34,17 @@ func ExampleScheduler_basic() {
 func ExampleScheduler_repeating() {
 	scheduler := New()
 	defer func() { <-scheduler.Stop() }()
-	scheduler.Start()
+	_ = scheduler.Start()
 
 	var count int64
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		current := atomic.AddInt64(&count, 1)
 		fmt.Printf("Execution %d\n", current)
 		return nil
 	})
 
 	// Run every 75ms
-	scheduler.ScheduleRepeating("counter", task, 75*time.Millisecond)
+	_ = scheduler.ScheduleRepeating("counter", task, 75*time.Millisecond)
 
 	time.Sleep(300 * time.Millisecond)
 
@@ -57,9 +57,9 @@ func ExampleScheduler_repeating() {
 func ExampleScheduler_cron() {
 	scheduler := New()
 	defer func() { <-scheduler.Stop() }()
-	scheduler.Start()
+	_ = scheduler.Start()
 
-	task := workerpool.TaskFunc(func(ctx context.Context) error {
+	task := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Daily backup started")
 		return nil
 	})
@@ -75,7 +75,7 @@ func ExampleScheduler_cron() {
 func ExampleBackoffTask() {
 	// Task that fails a few times then succeeds
 	attempts := 0
-	unreliableTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	unreliableTask := workerpool.TaskFunc(func(_ context.Context) error {
 		attempts++
 		if attempts < 3 {
 			return fmt.Errorf("temporary failure (attempt %d)", attempts)
@@ -103,34 +103,34 @@ func ExampleBackoffTask() {
 func ExampleScheduler_webServerTasks() {
 	scheduler := New()
 	defer func() { <-scheduler.Stop() }()
-	scheduler.Start()
+	_ = scheduler.Start()
 
 	// Cleanup old sessions every hour
-	cleanupTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	cleanupTask := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Cleaning up expired sessions...")
 		// Your cleanup logic here
 		return nil
 	})
 
-	scheduler.ScheduleCron("cleanup", "@hourly", cleanupTask)
+	_ = scheduler.ScheduleCron("cleanup", "@hourly", cleanupTask)
 
 	// Health check every 30 seconds
-	healthTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	healthTask := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Running health check...")
 		// Your health check logic here
 		return nil
 	})
 
-	scheduler.ScheduleRepeating("health", healthTask, 30*time.Second)
+	_ = scheduler.ScheduleRepeating("health", healthTask, 30*time.Second)
 
 	// Send metrics report every 5 minutes
-	metricsTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	metricsTask := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Sending metrics report...")
 		// Your metrics reporting logic here
 		return nil
 	})
 
-	scheduler.ScheduleRepeating("metrics", metricsTask, 5*time.Minute)
+	_ = scheduler.ScheduleRepeating("metrics", metricsTask, 5*time.Minute)
 
 	// In a real server, you'd run indefinitely
 	// select {}
