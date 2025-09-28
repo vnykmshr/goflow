@@ -14,6 +14,10 @@ Thank you for your interest in contributing to Goflow! We welcome contributions 
 # Install dependencies
 go mod download
 
+# Install development tools and pre-commit hook
+make install-tools
+make install-hooks
+
 # Run tests
 make test
 

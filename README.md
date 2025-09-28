@@ -95,6 +95,21 @@ func main() {
 - [API Reference](https://pkg.go.dev/github.com/vnykmshr/goflow)
 - [Examples](./examples/)
 
+## Development
+
+Install the pre-commit hook for automatic code quality checks:
+```bash
+make install-hooks
+```
+
+The hook automatically:
+- Checks for potential secrets
+- Formats Go code with `goimports` and `gofmt`
+- Runs `golangci-lint` on changed files
+- Verifies the build succeeds
+
+Run `make test` manually before pushing changes.
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.

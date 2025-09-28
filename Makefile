@@ -1,4 +1,4 @@
-.PHONY: build test lint clean install-tools fmt bench deps help check vet
+.PHONY: build test lint clean install-tools fmt bench deps help check vet install-hooks
 
 # Variables
 BINARY_NAME=goflow
@@ -25,6 +25,7 @@ help:
 	@echo "  vet           - Run go vet"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  install-tools - Install development tools"
+	@echo "  install-hooks - Install git pre-commit hook"
 	@echo "  bench         - Run benchmarks"
 	@echo "  deps          - Update dependencies"
 
@@ -32,6 +33,16 @@ help:
 install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install golang.org/x/tools/cmd/goimports@latest
+
+# Install git pre-commit hook
+install-hooks:
+	@echo "Installing pre-commit hook..."
+	@mkdir -p scripts
+	@cp scripts/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "✓ Pre-commit hook installed successfully"
+	@echo "  The hook will run automatically on 'git commit'"
+	@echo "  It checks for secrets, formats code, runs linter, and verifies build"
 
 # Build the project
 build:

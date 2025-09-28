@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# goflow pre-commit hook - runs essential checks before commit
+
+set -e
+
+# Expand tilde in GOPATH if present
+if [[ "$GOPATH" == "~"* ]]; then
+    export GOPATH="${GOPATH/#~/$HOME}"
+fi
+
+echo "Running pre-commit checks..."
+
+# Security check for secrets
+patterns="password\s*[=:]\s*['\"][^'\"]{8,}['\"]|secret\s*[=:]\s*['\"][^'\"]{16,}['\"]|token\s*[=:]\s*['\"][^'\"]{20,}['\"]"
+if git diff --cached --name-only | xargs grep -lE "$patterns" 2>/dev/null; then
+    echo "✗ Potential secrets detected in commit"
+    exit 1
+fi
+
+# Format code
+echo "→ Formatting code..."
+staged_go_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+if [ -n "$staged_go_files" ]; then
+    goimports -w $staged_go_files
+    gofmt -s -w $staged_go_files
+    git add $staged_go_files
+fi
+
+# Run linter on staged files
+echo "→ Running linter..."
+if [ -n "$staged_go_files" ]; then
+    if ! golangci-lint run --fast $staged_go_files; then
+        echo "✗ Linting failed"
+        exit 1
+    fi
+fi
+
+# Skip tests in pre-commit (too slow)
+# Run: make test  manually before pushing
+
+# Build check
+echo "→ Checking build..."
+if ! go build ./...; then
+    echo "✗ Build failed"
+    exit 1
+fi
+
+echo "✓ All pre-commit checks passed"
