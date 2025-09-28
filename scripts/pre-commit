@@ -4,11 +4,6 @@
 
 set -e
 
-# Expand tilde in GOPATH if present
-if [[ "$GOPATH" == "~"* ]]; then
-    export GOPATH="${GOPATH/#~/$HOME}"
-fi
-
 echo "Running pre-commit checks..."
 
 # Security check for secrets
