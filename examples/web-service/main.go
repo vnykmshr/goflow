@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -233,9 +234,13 @@ func (ws *WebService) withConcurrencyLimit(limiter concurrency.Limiter, handler 
 func (ws *WebService) handleUsers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		_, _ = fmt.Fprintf(w, `{"users": [{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]}`)
+		if _, err := fmt.Fprintf(w, `{"users": [{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]}`); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	case httpMethodPOST:
-		_, _ = fmt.Fprintf(w, `{"message": "User created", "id": 123}`)
+		if _, err := fmt.Fprintf(w, `{"message": "User created", "id": 123}`); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -265,8 +270,10 @@ func (ws *WebService) handleDataProcessing(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, _ = fmt.Fprintf(w, `{"message": "Data processed successfully", "stages": %d, "duration": "%v"}`,
-		len(result.StageResults), result.Duration)
+	if _, err := fmt.Fprintf(w, `{"message": "Data processed successfully", "stages": %d, "duration": "%v"}`,
+		len(result.StageResults), result.Duration); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // handleUpload demonstrates upload handling with rate limiting
@@ -278,21 +285,27 @@ func (ws *WebService) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	// Simulate file upload processing
 	time.Sleep(100 * time.Millisecond)
-	_, _ = fmt.Fprintf(w, `{"message": "File uploaded successfully", "size": 1024}`)
+	if _, err := fmt.Fprintf(w, `{"message": "File uploaded successfully", "size": 1024}`); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // handleDatabaseQuery demonstrates database operations with concurrency limiting
 func (ws *WebService) handleDatabaseQuery(w http.ResponseWriter, _ *http.Request) {
 	// Simulate database query
 	time.Sleep(50 * time.Millisecond)
-	_, _ = fmt.Fprintf(w, `{"data": [{"id": 1, "value": "result1"}, {"id": 2, "value": "result2"}]}`)
+	if _, err := fmt.Fprintf(w, `{"data": [{"id": 1, "value": "result1"}, {"id": 2, "value": "result2"}]}`); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // handleCPUIntensive demonstrates CPU-intensive operations with concurrency limiting
 func (ws *WebService) handleCPUIntensive(w http.ResponseWriter, _ *http.Request) {
 	// Simulate CPU-intensive work
 	time.Sleep(200 * time.Millisecond)
-	_, _ = fmt.Fprintf(w, `{"message": "Processing completed", "result": "processed_data"}`)
+	if _, err := fmt.Fprintf(w, `{"message": "Processing completed", "result": "processed_data"}`); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // handleTaskSubmission demonstrates background task submission
@@ -321,7 +334,9 @@ func (ws *WebService) handleTaskSubmission(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Acknowledge submission
-	_, _ = fmt.Fprintf(w, `{"message": "Task submitted successfully"}`)
+	if _, err := fmt.Fprintf(w, `{"message": "Task submitted successfully"}`); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // handleHealth provides health check endpoint
@@ -340,7 +355,18 @@ func (ws *WebService) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = fmt.Fprintf(w, `{"health": %+v}`, health)
+
+	// Use json.Marshal for safe JSON encoding instead of format string
+	healthJSON, err := json.Marshal(map[string]interface{}{"health": health})
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Printf("Error marshaling health response: %v", err)
+		return
+	}
+
+	if _, err := w.Write(healthJSON); err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 // Start starts the web service and background tasks

@@ -421,8 +421,10 @@ func runHTTPServer() {
 		time.Sleep(100 * time.Millisecond)
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprintf(w, `{"message": "Hello from %s!", "timestamp": "%s"}`,
-			config.InstanceID, time.Now().Format(time.RFC3339))
+		if _, err := fmt.Fprintf(w, `{"message": "Hello from %s!", "timestamp": "%s"}`,
+			config.InstanceID, time.Now().Format(time.RFC3339)); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	})
 
 	// Stats endpoint
@@ -434,7 +436,7 @@ func runHTTPServer() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprintf(w, `{
+		if _, err := fmt.Fprintf(w, `{
 	"rate": %.1f,
 	"burst": %d,
 	"tokens": %.1f,
@@ -443,7 +445,9 @@ func runHTTPServer() {
 	"denied_requests": %d,
 	"active_instances": %d
 }`, stats.Rate, stats.Burst, stats.Tokens, stats.TotalRequests,
-			stats.AllowedRequests, stats.DeniedRequests, len(stats.ActiveInstances))
+			stats.AllowedRequests, stats.DeniedRequests, len(stats.ActiveInstances)); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	})
 
 	port := "8080"
