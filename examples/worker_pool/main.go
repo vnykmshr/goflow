@@ -3,9 +3,10 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
@@ -27,8 +28,12 @@ func main() {
 	for i := 1; i <= 5; i++ {
 		taskID := i
 		task := workerpool.TaskFunc(func(ctx context.Context) error {
-			// Simulate work
-			duration := time.Duration(rand.Intn(1000)+500) * time.Millisecond
+			// Simulate work with cryptographically secure random duration
+			randNum, err := rand.Int(rand.Reader, big.NewInt(1000))
+			if err != nil {
+				return fmt.Errorf("failed to generate random duration: %w", err)
+			}
+			duration := time.Duration(randNum.Int64()+500) * time.Millisecond
 			fmt.Printf("Task %d: working for %v\n", taskID, duration)
 			time.Sleep(duration)
 			fmt.Printf("Task %d: completed\n", taskID)

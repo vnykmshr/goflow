@@ -66,5 +66,13 @@ func main() {
 	fmt.Println("  /process - Leaky bucket (5 RPS, smooth)")
 	fmt.Println("  /db      - Concurrency limit (max 3)")
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Create HTTP server with proper timeouts
+	server := &http.Server{
+		Addr:         ":8080",
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	log.Fatal(server.ListenAndServe())
 }

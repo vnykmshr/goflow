@@ -95,7 +95,9 @@ func main() {
 
 	// Close writer and wait for all data to be written
 	fmt.Println("Closing async writer...")
-	asyncWriter.Close()
+	if err := asyncWriter.Close(); err != nil {
+		log.Printf("Error closing async writer: %v", err)
+	}
 
 	// Read back the file to verify
 	content, err := os.ReadFile(file.Name())
