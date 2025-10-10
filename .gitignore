@@ -1,9 +1,12 @@
 # Binaries and build artifacts
 *.exe
-**/examples/**/[^.]*
-!**/examples/**/*.go
-!**/examples/**/*.md
-!**/examples/**/*.txt
+
+# Example binaries (ignore executables with same name as directory)
+examples/rate_limiter/rate_limiter
+examples/streaming/streaming
+examples/worker_pool/worker_pool
+examples/distributed-rate-limiting/distributed-rate-limiting
+examples/web-service/web-service
 
 # Coverage reports
 coverage.out
