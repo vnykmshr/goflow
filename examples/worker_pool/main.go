@@ -27,7 +27,7 @@ func main() {
 	fmt.Println("Submitting simple tasks...")
 	for i := 1; i <= 5; i++ {
 		taskID := i
-		task := workerpool.TaskFunc(func(ctx context.Context) error {
+		task := workerpool.TaskFunc(func(_ context.Context) error {
 			// Simulate work with cryptographically secure random duration
 			randNum, err := rand.Int(rand.Reader, big.NewInt(1000))
 			if err != nil {
@@ -49,7 +49,7 @@ func main() {
 	fmt.Println("\nSubmitting tasks with results...")
 	for i := 1; i <= 3; i++ {
 		taskID := i
-		task := workerpool.TaskFunc(func(ctx context.Context) error {
+		task := workerpool.TaskFunc(func(_ context.Context) error {
 			result := taskID * taskID
 			fmt.Printf("Calculation task %d: %d^2 = %d\n", taskID, taskID, result)
 			return nil
@@ -62,7 +62,7 @@ func main() {
 
 	// Example 3: Error handling
 	fmt.Println("\nSubmitting task that will fail...")
-	errorTask := workerpool.TaskFunc(func(ctx context.Context) error {
+	errorTask := workerpool.TaskFunc(func(_ context.Context) error {
 		fmt.Println("Error task: simulating failure")
 		return fmt.Errorf("simulated error")
 	})

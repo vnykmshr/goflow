@@ -34,7 +34,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer workers.Shutdown(context.Background())
+    defer func() { <-workers.Shutdown() }()
 
     for i := 0; i < 10; i++ {
         if rateLimiter.Allow() && concLimiter.Acquire() {

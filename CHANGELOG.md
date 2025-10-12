@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Common validation helpers in `pkg/common/validation` to reduce boilerplate
+- Migration guide in `docs/MIGRATION.md`
+
+### Deprecated
+- `leakybucket.New()` and `leakybucket.NewWithConfig()` - use `NewSafe()` variants instead (will be removed in v2.0.0)
+
+### Removed
+- `pkg/common/context` package - use standard library `context` package directly
+
+### Fixed
+- Pre-commit hook: removed obsolete `--fast` flag from golangci-lint
+- GETTING_STARTED.md: corrected `workerpool.Shutdown()` usage example
+
+### Changed
+- Rate limiters now use shared validation helpers for consistent error messages
+- All validation logic consolidated for better maintainability
+
 ## [v1.0.2] - 2025-01-17
 
 ### Fixed

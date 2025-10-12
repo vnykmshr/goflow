@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/vnykmshr/goflow/pkg/common/errors"
+	"github.com/vnykmshr/goflow/pkg/common/validation"
 )
 
 // Limit represents the maximum frequency of events per unit time.
@@ -170,11 +171,10 @@ func NewSafe(rate Limit, burst int) (Limiter, error) {
 // NewWithConfigSafe creates a new rate limiter with validation that returns an error instead of panicking.
 // This is the recommended way to create rate limiters for production use.
 func NewWithConfigSafe(config Config) (Limiter, error) {
-	if config.Rate < 0 {
-		return nil, errors.NewValidationError("bucket", "rate", config.Rate, "rate cannot be negative").
-			WithHint("use 0 for no rate limit or a positive value")
+	if err := validation.ValidateNonNegative("bucket", "rate", float64(config.Rate)); err != nil {
+		return nil, err
 	}
-	if config.Burst <= 0 {
+	if err := validation.ValidatePositive("bucket", "burst", config.Burst); err != nil {
 		return nil, errors.NewValidationError("bucket", "burst", config.Burst, "burst must be positive").
 			WithHint("burst determines how many tokens can be consumed instantly")
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/vnykmshr/goflow/pkg/common/errors"
+	"github.com/vnykmshr/goflow/pkg/common/validation"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
 
@@ -133,6 +134,9 @@ type leakyBucket struct {
 
 // New creates a new leaky bucket rate limiter with the specified leak rate and capacity.
 // The limiter starts empty.
+//
+// Deprecated: Use NewSafe instead. This function panics on invalid input and will be
+// removed in v2.0.0. NewSafe provides the same functionality with proper error handling.
 func New(leakRate bucket.Limit, capacity int) Limiter {
 	return NewWithConfig(Config{
 		LeakRate:     leakRate,
@@ -143,6 +147,9 @@ func New(leakRate bucket.Limit, capacity int) Limiter {
 }
 
 // NewWithConfig creates a new leaky bucket rate limiter with the specified configuration.
+//
+// Deprecated: Use NewWithConfigSafe instead. This function panics on invalid input and
+// will be removed in v2.0.0. NewWithConfigSafe provides the same functionality with proper error handling.
 func NewWithConfig(config Config) Limiter {
 	if config.LeakRate < 0 {
 		panic("leak rate must not be negative")
@@ -186,11 +193,11 @@ func NewSafe(leakRate bucket.Limit, capacity int) (Limiter, error) {
 // NewWithConfigSafe creates a new leaky bucket rate limiter with validation that returns an error instead of panicking.
 // This is the recommended way to create leaky bucket limiters for production use.
 func NewWithConfigSafe(config Config) (Limiter, error) {
-	if config.LeakRate < 0 {
+	if err := validation.ValidateNonNegative("leakybucket", "leakRate", float64(config.LeakRate)); err != nil {
 		return nil, errors.NewValidationError("leakybucket", "leakRate", config.LeakRate, "leak rate must not be negative").
 			WithHint("leak rate determines how fast requests are processed")
 	}
-	if config.Capacity <= 0 {
+	if err := validation.ValidatePositive("leakybucket", "capacity", config.Capacity); err != nil {
 		return nil, errors.NewValidationError("leakybucket", "capacity", config.Capacity, "capacity must be positive").
 			WithHint("capacity determines how many requests can be queued")
 	}

@@ -117,6 +117,7 @@ func TestBasicExecution(t *testing.T) {
 
 	if result == nil {
 		t.Fatal("result should not be nil")
+		return // Prevent nil pointer dereference in linter analysis
 	}
 
 	testutil.AssertEqual(t, result.Input, "input")
@@ -157,6 +158,7 @@ func TestStageError(t *testing.T) {
 
 	if result == nil {
 		t.Fatal("result should not be nil")
+		return // Prevent nil pointer dereference in linter analysis
 	}
 
 	testutil.AssertEqual(t, result.Input, "input")

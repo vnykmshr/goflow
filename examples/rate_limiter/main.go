@@ -32,23 +32,23 @@ func main() {
 	}
 
 	// HTTP server with rate limiting
-	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api", func(w http.ResponseWriter, _ *http.Request) {
 		if !apiLimiter.Allow() {
 			http.Error(w, "Rate limited", http.StatusTooManyRequests)
 			return
 		}
-		fmt.Fprintf(w, "API request processed at %v\n", time.Now())
+		_, _ = fmt.Fprintf(w, "API request processed at %v\n", time.Now())
 	})
 
-	http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/process", func(w http.ResponseWriter, _ *http.Request) {
 		if !smoothLimiter.Allow() {
 			http.Error(w, "Processing queue full", http.StatusTooManyRequests)
 			return
 		}
-		fmt.Fprintf(w, "Processing request at %v\n", time.Now())
+		_, _ = fmt.Fprintf(w, "Processing request at %v\n", time.Now())
 	})
 
-	http.HandleFunc("/db", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/db", func(w http.ResponseWriter, _ *http.Request) {
 		if !dbLimiter.Acquire() {
 			http.Error(w, "Too many DB operations", http.StatusServiceUnavailable)
 			return
@@ -57,7 +57,7 @@ func main() {
 
 		// Simulate database operation
 		time.Sleep(100 * time.Millisecond)
-		fmt.Fprintf(w, "Database query completed at %v\n", time.Now())
+		_, _ = fmt.Fprintf(w, "Database query completed at %v\n", time.Now())
 	})
 
 	fmt.Println("Rate limiter examples running on :8080")

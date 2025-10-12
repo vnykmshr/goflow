@@ -25,7 +25,7 @@ fi
 # Run linter on staged files
 echo "→ Running linter..."
 if [ -n "$staged_go_files" ]; then
-    if ! golangci-lint run --fast $staged_go_files; then
+    if ! golangci-lint run $staged_go_files; then
         echo "✗ Linting failed"
         exit 1
     fi

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/vnykmshr/goflow/pkg/common/errors"
+	"github.com/vnykmshr/goflow/pkg/common/validation"
 )
 
 // Limiter controls the number of concurrent operations that can happen
@@ -90,7 +91,7 @@ func NewSafe(capacity int) (Limiter, error) {
 // NewWithConfigSafe creates a new concurrency limiter with validation that returns an error instead of panicking.
 // This is the recommended way to create concurrency limiters for production use.
 func NewWithConfigSafe(config Config) (Limiter, error) {
-	if config.Capacity <= 0 {
+	if err := validation.ValidatePositive("concurrency", "capacity", config.Capacity); err != nil {
 		return nil, errors.NewValidationError("concurrency", "capacity", config.Capacity, "capacity must be positive").
 			WithHint("capacity determines how many concurrent operations are allowed")
 	}

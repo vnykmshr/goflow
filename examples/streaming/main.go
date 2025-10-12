@@ -22,7 +22,11 @@ func main() {
 
 	// Process numbers: filter even, multiply by 2, collect results
 	s := stream.FromSlice(numbers)
-	defer s.Close()
+	defer func() {
+		if err := s.Close(); err != nil {
+			log.Printf("Error closing stream: %v", err)
+		}
+	}()
 
 	result, err := s.
 		Filter(func(x int) bool {
@@ -47,7 +51,11 @@ func main() {
 
 	// Process strings: filter by length, convert to uppercase
 	s2 := stream.FromSlice(words)
-	defer s2.Close()
+	defer func() {
+		if err := s2.Close(); err != nil {
+			log.Printf("Error closing stream: %v", err)
+		}
+	}()
 
 	longWords, err := s2.
 		Filter(func(s string) bool {
@@ -72,8 +80,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(file.Name()) // Clean up
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+		_ = os.Remove(file.Name()) // Clean up temp file, ignore error
+	}()
 
 	// Create async writer with buffering
 	asyncWriter := writer.New(file)
@@ -124,7 +134,11 @@ func main() {
 
 	// Process logs: extract errors, get error messages
 	s3 := stream.FromSlice(logEntries)
-	defer s3.Close()
+	defer func() {
+		if err := s3.Close(); err != nil {
+			log.Printf("Error closing stream: %v", err)
+		}
+	}()
 
 	errorMessages, err := s3.
 		Filter(func(entry string) bool {

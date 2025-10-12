@@ -92,6 +92,8 @@ func main() {
 ## Documentation
 
 - [Getting Started](./docs/GETTING_STARTED.md)
+- [Decision Guide](./docs/DECISION_GUIDE.md)
+- [Migration Guide](./docs/MIGRATION.md)
 - [API Reference](https://pkg.go.dev/github.com/vnykmshr/goflow)
 - [Examples](./examples/)
 
