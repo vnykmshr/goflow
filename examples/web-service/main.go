@@ -4,7 +4,6 @@
 // - Concurrency limiting for resource protection
 // - Pipeline processing for data transformation
 // - Scheduled tasks for maintenance
-// - Integrated metrics for monitoring
 package main
 
 import (
@@ -18,10 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/vnykmshr/goflow/pkg/metrics"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/concurrency"
 	"github.com/vnykmshr/goflow/pkg/scheduling/pipeline"
@@ -50,17 +45,12 @@ type WebService struct {
 	// Data processing
 	dataPipeline pipeline.Pipeline
 
-	// Metrics
-	metricsRegistry *metrics.Registry
-	httpServer      *http.Server
+	// HTTP server
+	httpServer *http.Server
 }
 
 // NewWebService creates a new web service with properly configured goflow components
 func NewWebService(port string) (*WebService, error) {
-	// Create metrics registry
-	promRegistry := prometheus.NewRegistry()
-	metricsRegistry := metrics.NewRegistry(promRegistry)
-
 	// Create rate limiters with safe constructors and helpful error messages
 	apiRateLimiter, err := bucket.NewSafe(100, 200) // 100 RPS, burst 200
 	if err != nil {
@@ -116,7 +106,6 @@ func NewWebService(port string) (*WebService, error) {
 		backgroundWorkers:   workers,
 		taskScheduler:       sched,
 		dataPipeline:        dataPipeline,
-		metricsRegistry:     metricsRegistry,
 		httpServer:          server,
 	}
 
@@ -201,9 +190,6 @@ func (ws *WebService) setupRoutes(mux *http.ServeMux) {
 
 	// Health check endpoint
 	mux.HandleFunc("/health", ws.handleHealth)
-
-	// Metrics endpoint
-	mux.Handle("/metrics", promhttp.Handler())
 }
 
 // withRateLimit wraps a handler with rate limiting
@@ -391,7 +377,6 @@ func (ws *WebService) Start(ctx context.Context) error {
 		log.Printf("CPU concurrency limit: %d", ws.cpuIntensiveLimiter.Capacity())
 		log.Printf("Background workers: %d", ws.backgroundWorkers.Size())
 		log.Printf("Health check: http://localhost%s/health", ws.httpServer.Addr)
-		log.Printf("Metrics: http://localhost%s/metrics", ws.httpServer.Addr)
 
 		if err := ws.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("HTTP server error: %v", err)
@@ -406,18 +391,8 @@ func (ws *WebService) Start(ctx context.Context) error {
 
 // setupScheduledTasks configures periodic maintenance tasks
 func (ws *WebService) setupScheduledTasks() error {
-	// Schedule metrics cleanup task every 5 minutes
-	err := ws.taskScheduler.ScheduleRepeating("metrics-cleanup", workerpool.TaskFunc(func(_ context.Context) error {
-		log.Println("Running scheduled metrics cleanup task")
-		// Simulate metrics cleanup
-		return nil
-	}), 5*time.Minute)
-	if err != nil {
-		return err
-	}
-
 	// Schedule health check task every 30 seconds
-	err = ws.taskScheduler.ScheduleRepeating("health-check", workerpool.TaskFunc(func(_ context.Context) error {
+	err := ws.taskScheduler.ScheduleRepeating("health-check", workerpool.TaskFunc(func(_ context.Context) error {
 		size := ws.backgroundWorkers.Size()
 		queueSize := ws.backgroundWorkers.QueueSize()
 		log.Printf("Health check - Workers: %d, Queued tasks: %d", size, queueSize)

@@ -54,13 +54,58 @@ Please include as much of the following information as possible:
 When using goflow in production:
 
 ### Rate Limiting
+
+**Local Rate Limiting:**
 - Use appropriate rate limits based on your infrastructure capacity
-- Monitor rate limiter metrics to detect unusual patterns
-- For distributed rate limiting, ensure Redis is properly secured:
-  - Enable authentication (requirepass)
-  - Use TLS for connections
-  - Restrict network access
-  - Keep Redis updated
+- Monitor rate limiter behavior to detect unusual patterns
+- Consider the burst parameter carefully - too high allows traffic spikes
+
+**Distributed Rate Limiting:**
+
+⚠️  **Distributed rate limiting requires careful security configuration:**
+
+1. **Redis Authentication** (Required for Production)
+   ```go
+   rdb := redis.NewClient(&redis.Options{
+       Addr:     "localhost:6379",
+       Password: os.Getenv("REDIS_PASSWORD"),
+   })
+   ```
+
+2. **TLS Encryption** (Required for Production)
+   ```go
+   rdb := redis.NewClient(&redis.Options{
+       Addr: "redis.example.com:6380",
+       TLSConfig: &tls.Config{
+           MinVersion: tls.VersionTLS12,
+       },
+   })
+   ```
+
+3. **Network Isolation**
+   - Never expose Redis to the public internet
+   - Use private networks (VPC) when possible
+   - Configure firewall rules to restrict access
+   - Use Redis ACLs for additional access control
+
+4. **Fallback Behavior Security Risk**
+
+   ⚠️  **CRITICAL**: When `FallbackToLocal=true` and Redis fails, your rate limit increases by N× (where N = number of instances):
+
+   - Normal operation: 100 RPS globally across all instances
+   - Redis failure: 100 RPS **per instance** = 1000 RPS with 10 instances
+
+   For security-critical endpoints, disable fallback:
+   ```go
+   config := distributed.Config{
+       FallbackToLocal: false, // Deny requests on Redis failure
+   }
+   ```
+
+5. **Key Namespacing**
+   - Use environment-specific prefixes: `prod:ratelimit:api`
+   - Separate keys per tenant in multi-tenant systems
+   - Document your key naming convention
 
 ### Task Scheduling
 - Set reasonable timeouts for tasks to prevent resource exhaustion

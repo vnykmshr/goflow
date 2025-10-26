@@ -266,6 +266,63 @@
 //		// ... other config
 //	}
 //
+// # Security Considerations
+//
+// ⚠️  PRODUCTION DEPLOYMENTS MUST SECURE REDIS CONNECTIONS
+//
+// ## Redis Authentication
+//
+//	// Enable Redis authentication
+//	rdb := redis.NewClient(&redis.Options{
+//		Addr:     "localhost:6379",
+//		Password: os.Getenv("REDIS_PASSWORD"), // Never hardcode passwords
+//		DB:       0,
+//	})
+//
+// ## TLS Encryption
+//
+//	// Use TLS for production
+//	import "crypto/tls"
+//
+//	rdb := redis.NewClient(&redis.Options{
+//		Addr: "redis.example.com:6380",
+//		TLSConfig: &tls.Config{
+//			MinVersion: tls.VersionTLS12,
+//		},
+//	})
+//
+// ## Network Isolation
+//
+//	// Restrict Redis access via firewall rules:
+//	// - Only allow application servers to connect
+//	// - Use private networks (VPC) when possible
+//	// - Never expose Redis to public internet
+//
+// ## Multi-Tenant Isolation
+//
+//	// Use environment-specific key prefixes
+//	config := distributed.Config{
+//		Key: fmt.Sprintf("%s:ratelimit:api", environment), // prod:ratelimit:api
+//	}
+//
+// ## Fallback Behavior Warning
+//
+// ⚠️  CRITICAL: When FallbackToLocal=true and Redis fails, rate limits become
+// per-instance instead of global:
+//
+//	// If you have N instances with limit R:
+//	// - Normal: R total requests/sec globally
+//	// - Redis down: N × R requests/sec (each instance allows R)
+//
+//	// Example with 10 instances, 100 RPS limit:
+//	// - Normal: 100 RPS total (distributed)
+//	// - Redis down: 1000 RPS total (10 × 100)
+//
+//	// For security-critical limits, disable fallback:
+//	config := distributed.Config{
+//		FallbackToLocal: false, // Deny requests if Redis unavailable
+//	}
+//
 // # Examples
 //
 // See the example tests for comprehensive usage patterns:
