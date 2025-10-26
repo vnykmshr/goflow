@@ -6,7 +6,6 @@
 - `bucket` - API endpoints, bursty traffic
 - `leakybucket` - Steady processing, smooth rates
 - `concurrency` - Database connections, resource protection
-- `distributed` - Multi-instance applications
 
 **Task Processing**
 - `workerpool` - Dynamic background tasks

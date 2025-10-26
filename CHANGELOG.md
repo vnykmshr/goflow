@@ -11,6 +11,7 @@
 
 ### Removed
 - `pkg/common/context` package - use standard library `context` package directly
+- `pkg/ratelimit/distributed` package - untested implementation removed; use specialized libraries like `github.com/go-redis/redis_rate` instead
 
 ### Fixed
 - Pre-commit hook: removed obsolete `--fast` flag from golangci-lint
@@ -45,7 +46,7 @@
 
 Initial release with production-ready components:
 
-- Rate limiting (token bucket, leaky bucket, distributed)
+- Rate limiting (token bucket, leaky bucket)
 - Task scheduling (worker pools, cron scheduler)
 - Streaming (functional operations, backpressure)
 - Prometheus metrics integration

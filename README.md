@@ -13,7 +13,6 @@ A Go library for concurrent applications with rate limiting, task scheduling, an
 **Rate Limiting** (`pkg/ratelimit`)
 - Token bucket and leaky bucket algorithms
 - Concurrency limiting
-- Distributed rate limiting with Redis
 - Prometheus metrics
 
 **Task Scheduling** (`pkg/scheduling`)

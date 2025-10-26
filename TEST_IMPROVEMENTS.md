@@ -291,11 +291,7 @@ testutil.WaitForInt32(t, &counter, expected, timeout)
 
 ### **High Priority**
 
-1. **Add tests for `pkg/ratelimit/distributed`** (currently 0% coverage)
-   - Requires Redis mock or test container
-   - High value due to complexity
-
-2. **Add more integration tests** for:
+1. **Add more integration tests** for:
    - Stream + Channel + Writer workflows
    - Scheduler + Pipeline interactions
    - Error recovery scenarios
