@@ -13,64 +13,8 @@ import (
 	"github.com/vnykmshr/goflow/internal/testutil"
 )
 
-// mockWriter is a test writer that can simulate various conditions.
-type mockWriter struct {
-	buf         *bytes.Buffer
-	mu          sync.Mutex
-	writeDelay  time.Duration
-	errorOnNth  int
-	writeCount  int
-	shouldError bool
-	err         error
-}
-
-func newMockWriter() *mockWriter {
-	return &mockWriter{
-		buf: &bytes.Buffer{},
-	}
-}
-
-func (mw *mockWriter) Write(p []byte) (int, error) {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-
-	mw.writeCount++
-
-	if mw.writeDelay > 0 {
-		time.Sleep(mw.writeDelay)
-	}
-
-	if mw.shouldError {
-		return 0, mw.err
-	}
-
-	if mw.errorOnNth > 0 && mw.writeCount == mw.errorOnNth {
-		return 0, errors.New("simulated error")
-	}
-
-	return mw.buf.Write(p)
-}
-
-func (mw *mockWriter) String() string {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-	return mw.buf.String()
-}
-
-func (mw *mockWriter) Len() int {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-	return mw.buf.Len()
-}
-
-func (mw *mockWriter) WriteCount() int {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-	return mw.writeCount
-}
-
 func TestNew(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -80,7 +24,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewWithConfig(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := Config{
 		BufferSize:    1024,
 		FlushInterval: 100 * time.Millisecond,
@@ -97,7 +41,7 @@ func TestNewWithConfig(t *testing.T) {
 }
 
 func TestBasicWrite(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -114,7 +58,7 @@ func TestBasicWrite(t *testing.T) {
 }
 
 func TestWriteString(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -128,7 +72,7 @@ func TestWriteString(t *testing.T) {
 }
 
 func TestMultipleWrites(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -147,9 +91,9 @@ func TestMultipleWrites(t *testing.T) {
 }
 
 func TestAsyncWrite(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	// Add some delay to test asynchronous behavior
-	underlying.writeDelay = 10 * time.Millisecond
+	underlying.SetWriteDelay(10 * time.Millisecond)
 
 	config := DefaultConfig()
 	config.BlockOnFull = false
@@ -174,7 +118,7 @@ func TestAsyncWrite(t *testing.T) {
 }
 
 func TestBuffering(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := DefaultConfig()
 	config.FlushInterval = 0 // Disable automatic flushing
 	writer := NewWithConfig(underlying, config)
@@ -198,7 +142,7 @@ func TestBuffering(t *testing.T) {
 }
 
 func TestAutoFlush(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := DefaultConfig()
 	config.FlushInterval = 50 * time.Millisecond
 	writer := NewWithConfig(underlying, config)
@@ -216,7 +160,7 @@ func TestAutoFlush(t *testing.T) {
 }
 
 func TestBufferFull(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := DefaultConfig()
 	config.BufferSize = 10 // Small buffer
 	config.BlockOnFull = false
@@ -236,7 +180,7 @@ func TestBufferFull(t *testing.T) {
 }
 
 func TestBlockOnFull(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := DefaultConfig()
 	config.BufferSize = 10 // Small buffer
 	config.BlockOnFull = true
@@ -256,9 +200,8 @@ func TestBlockOnFull(t *testing.T) {
 }
 
 func TestWriteErrors(t *testing.T) {
-	underlying := newMockWriter()
-	underlying.shouldError = true
-	underlying.err = errors.New("write failed")
+	underlying := testutil.NewMockWriter()
+	underlying.SetAlwaysError(errors.New("write failed"))
 
 	config := DefaultConfig()
 	config.MaxRetries = 0 // No retries for faster test
@@ -277,8 +220,8 @@ func TestWriteErrors(t *testing.T) {
 }
 
 func TestRetries(t *testing.T) {
-	underlying := newMockWriter()
-	underlying.errorOnNth = 1 // Error on first write, succeed on retry
+	underlying := testutil.NewMockWriter()
+	underlying.SetErrorOnNth(1) // Error on first write, succeed on retry
 
 	config := DefaultConfig()
 	config.MaxRetries = 2
@@ -298,7 +241,7 @@ func TestRetries(t *testing.T) {
 }
 
 func TestContextCancellation(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -317,7 +260,7 @@ func TestContextCancellation(t *testing.T) {
 }
 
 func TestStats(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -345,7 +288,7 @@ func TestStats(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 
 	// Write some data
@@ -366,7 +309,7 @@ func TestClose(t *testing.T) {
 }
 
 func TestConcurrentWrites(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -412,7 +355,7 @@ func TestConcurrentWrites(t *testing.T) {
 
 func TestCallbacks(t *testing.T) {
 	t.Run("BufferFull", func(t *testing.T) {
-		underlying := newMockWriter()
+		underlying := testutil.NewMockWriter()
 
 		var bufferFullCalled bool
 
@@ -434,7 +377,7 @@ func TestCallbacks(t *testing.T) {
 	})
 
 	t.Run("Flush", func(t *testing.T) {
-		underlying := newMockWriter()
+		underlying := testutil.NewMockWriter()
 
 		var flushCalled bool
 		var flushBytes int
@@ -460,9 +403,8 @@ func TestCallbacks(t *testing.T) {
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		underlying := newMockWriter()
-		underlying.shouldError = true
-		underlying.err = errors.New("test error")
+		underlying := testutil.NewMockWriter()
+		underlying.SetAlwaysError(errors.New("test error"))
 
 		var errorCalled bool
 
@@ -489,7 +431,7 @@ func TestCallbacks(t *testing.T) {
 }
 
 func TestEmptyWrites(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	writer := New(underlying)
 	defer func() { _ = writer.Close() }()
 
@@ -514,7 +456,7 @@ func TestEmptyWrites(t *testing.T) {
 }
 
 func TestLargeWrites(t *testing.T) {
-	underlying := newMockWriter()
+	underlying := testutil.NewMockWriter()
 	config := DefaultConfig()
 	config.BufferSize = 1024 // 1KB buffer
 	writer := NewWithConfig(underlying, config)

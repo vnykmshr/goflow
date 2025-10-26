@@ -9,19 +9,6 @@ import (
 	"github.com/vnykmshr/goflow/internal/testutil"
 )
 
-// MockClock implements Clock for testing
-type MockClock struct {
-	now time.Time
-}
-
-func (m *MockClock) Now() time.Time {
-	return m.now
-}
-
-func (m *MockClock) Advance(d time.Duration) {
-	m.now = m.now.Add(d)
-}
-
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -90,7 +77,7 @@ func TestEvery(t *testing.T) {
 }
 
 func TestAllow(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens per second
 		Burst:         5,  // 5 token capacity
@@ -126,7 +113,7 @@ func TestAllow(t *testing.T) {
 }
 
 func TestAllowN(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10,
 		Burst:         10,
@@ -161,7 +148,7 @@ func TestAllowN(t *testing.T) {
 }
 
 func TestWait(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens/sec = 100ms per token
 		Burst:         1,
@@ -232,7 +219,7 @@ func TestWaitWithContext(t *testing.T) {
 }
 
 func TestReserve(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10, // 10 tokens/sec = 100ms per token
 		Burst:         2,
@@ -268,7 +255,7 @@ func TestReserve(t *testing.T) {
 }
 
 func TestReservationCancel(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          10,
 		Burst:         2,
@@ -358,7 +345,7 @@ func TestInfiniteRate(t *testing.T) {
 }
 
 func TestZeroRate(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          0,
 		Burst:         5,

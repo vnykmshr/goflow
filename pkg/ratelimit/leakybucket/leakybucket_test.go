@@ -9,19 +9,6 @@ import (
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
 
-// MockClock implements Clock for testing
-type MockClock struct {
-	now time.Time
-}
-
-func (m *MockClock) Now() time.Time {
-	return m.now
-}
-
-func (m *MockClock) Advance(d time.Duration) {
-	m.now = m.now.Add(d)
-}
-
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -58,7 +45,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestBasicFlow(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate:     10, // 10 requests per second = 1 request per 100ms
 		Capacity:     5,  // Can hold 5 requests
@@ -95,7 +82,7 @@ func TestBasicFlow(t *testing.T) {
 }
 
 func TestAllowN(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 10,
 		Capacity: 10,
@@ -126,7 +113,7 @@ func TestAllowN(t *testing.T) {
 }
 
 func TestLeakBehavior(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 10, // 10 requests/sec
 		Capacity: 10,
@@ -186,7 +173,7 @@ func TestWaitWithContext(t *testing.T) {
 }
 
 func TestReserve(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 10, // 10 requests/sec = 100ms per request
 		Capacity: 2,
@@ -227,7 +214,7 @@ func TestReserve(t *testing.T) {
 }
 
 func TestReservationCancel(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 10,
 		Capacity: 2,
@@ -302,7 +289,7 @@ func TestInfiniteRate(t *testing.T) {
 }
 
 func TestZeroRate(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 0,
 		Capacity: 5,
@@ -332,7 +319,7 @@ func TestZeroRate(t *testing.T) {
 }
 
 func TestInitialLevel(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 
 	// Test starting with initial level
 	limiter := NewWithConfig(Config{
@@ -383,7 +370,7 @@ func TestConcurrentAccess(_ *testing.T) {
 }
 
 func TestSmoothTrafficFlow(t *testing.T) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate: 10, // 10 requests/sec
 		Capacity: 20,

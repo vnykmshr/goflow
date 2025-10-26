@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/vnykmshr/goflow/internal/testutil"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
 
@@ -156,7 +157,7 @@ func BenchmarkInfiniteRate(b *testing.B) {
 
 // BenchmarkLeakProcessing measures the cost of leak processing over time
 func BenchmarkLeakProcessing(b *testing.B) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter := NewWithConfig(Config{
 		LeakRate:     100,
 		Capacity:     100,

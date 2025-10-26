@@ -3,6 +3,7 @@ package workerpool
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -177,24 +178,10 @@ func TestWorkerPool_PanicRecovery(t *testing.T) {
 		if result.Error == nil {
 			t.Error("expected panic error but got nil")
 		}
-		if !contains(result.Error.Error(), "panic") {
+		if !strings.Contains(result.Error.Error(), "panic") {
 			t.Errorf("expected panic in error message, got %v", result.Error)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for result")
 	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr ||
-		(len(s) > len(substr) &&
-			(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
-				func() bool {
-					for i := 0; i <= len(s)-len(substr); i++ {
-						if s[i:i+len(substr)] == substr {
-							return true
-						}
-					}
-					return false
-				}())))
 }

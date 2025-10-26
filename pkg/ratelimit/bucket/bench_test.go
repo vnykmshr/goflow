@@ -5,6 +5,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/vnykmshr/goflow/internal/testutil"
 )
 
 // mustNewSafe creates a new limiter or panics on error (for benchmarks only)
@@ -150,7 +152,7 @@ func BenchmarkInfiniteRate(b *testing.B) {
 
 // BenchmarkTimeUpdate measures the cost of time-based token updates
 func BenchmarkTimeUpdate(b *testing.B) {
-	clock := &MockClock{now: time.Now()}
+	clock := testutil.NewMockClock(time.Now())
 	limiter, err := NewWithConfigSafe(Config{
 		Rate:          100,
 		Burst:         100,
