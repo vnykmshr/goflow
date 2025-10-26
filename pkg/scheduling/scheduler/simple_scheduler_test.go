@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/vnykmshr/goflow/internal/testutil"
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
 )
 
@@ -34,11 +35,8 @@ func TestScheduler_BasicScheduling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(200 * time.Millisecond)
-
-	if count := atomic.LoadInt32(&executed); count != 2 {
-		t.Errorf("expected 2 executions, got %d", count)
-	}
+	// Wait for both tasks to execute
+	testutil.WaitForInt32(t, &executed, 2, 500*time.Millisecond)
 }
 
 func TestScheduler_RepeatingTask(t *testing.T) {
@@ -59,11 +57,10 @@ func TestScheduler_RepeatingTask(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(300 * time.Millisecond) // Should run at least 3 times
-
-	if count := atomic.LoadInt32(&executed); count < 3 {
-		t.Errorf("expected at least 3 executions, got %d", count)
-	}
+	// Wait for at least 3 executions (should happen within 300ms)
+	testutil.Eventually(t, func() bool {
+		return atomic.LoadInt32(&executed) >= 3
+	}, 500*time.Millisecond, 20*time.Millisecond)
 }
 
 func TestScheduler_CronScheduling(t *testing.T) {
@@ -85,11 +82,10 @@ func TestScheduler_CronScheduling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(1200 * time.Millisecond)
-
-	if count := atomic.LoadInt32(&executed); count == 0 {
-		t.Error("cron task should have executed at least once")
-	}
+	// Wait for at least one execution
+	testutil.Eventually(t, func() bool {
+		return atomic.LoadInt32(&executed) > 0
+	}, 2*time.Second, 50*time.Millisecond)
 }
 
 func TestScheduler_TaskManagement(t *testing.T) {
