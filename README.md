@@ -56,11 +56,14 @@ func main() {
         log.Fatal(err)
     }
 
-    pool := workerpool.NewWithConfig(workerpool.Config{
+    pool, err := workerpool.NewWithConfigSafe(workerpool.Config{
         WorkerCount: 5,
         QueueSize:   100,
         TaskTimeout: 30 * time.Second,
     })
+    if err != nil {
+        log.Fatal(err)
+    }
     defer func() { <-pool.Shutdown() }()
 
     if limiter.Allow() {
@@ -84,7 +87,7 @@ func main() {
 - `concurrency.NewSafe(limit)` - Concurrent operations control
 
 **Scheduling**
-- `workerpool.New(workers, queueSize)` - Background task processing
+- `workerpool.NewSafe(workers, queueSize)` - Background task processing
 - `scheduler.New()` - Cron and interval scheduling
 
 **Streaming**
