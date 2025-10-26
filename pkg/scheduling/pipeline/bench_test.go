@@ -65,7 +65,7 @@ func BenchmarkAsyncExecution(b *testing.B) {
 
 // BenchmarkWorkerPoolExecution measures performance with worker pool.
 func BenchmarkWorkerPoolExecution(b *testing.B) {
-	pool := workerpool.New(4, 100)
+	pool := workerpool.New(4, 100) //nolint:staticcheck // OK in benchmark
 	defer func() { <-pool.Shutdown() }()
 
 	// Consume worker pool results
@@ -255,7 +255,7 @@ func BenchmarkDataThroughput(b *testing.B) {
 
 // BenchmarkComplexWorkflow simulates a complex processing workflow.
 func BenchmarkComplexWorkflow(b *testing.B) {
-	pool := workerpool.New(8, 200)
+	pool := workerpool.New(8, 200) //nolint:staticcheck // OK in tests
 	defer func() { <-pool.Shutdown() }()
 
 	// Consume worker pool results

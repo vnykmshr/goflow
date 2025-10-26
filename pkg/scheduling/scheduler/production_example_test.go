@@ -11,7 +11,7 @@ import (
 func ExampleScheduler_production() {
 	// Create a production-ready scheduler with custom config
 	config := Config{
-		WorkerPool:   workerpool.New(4, 100),
+		WorkerPool:   workerpool.New(4, 100), //nolint:staticcheck // Example code
 		TickInterval: 100 * time.Millisecond, // Check every 100ms
 		MaxTasks:     1000,                   // Limit to 1000 concurrent tasks
 	}

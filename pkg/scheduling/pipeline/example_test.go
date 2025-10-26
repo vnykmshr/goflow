@@ -199,7 +199,7 @@ func Example_asyncExecution() {
 // Example_workerPool demonstrates pipeline execution with worker pool.
 func Example_workerPool() {
 	// Create worker pool
-	pool := workerpool.New(3, 10)
+	pool := workerpool.New(3, 10) //nolint:staticcheck // OK in tests
 	defer func() { <-pool.Shutdown() }()
 
 	// Consume worker pool results

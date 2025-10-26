@@ -237,7 +237,7 @@ func TestPipelineTimeout(t *testing.T) {
 }
 
 func TestWorkerPoolExecution(t *testing.T) {
-	pool := workerpool.New(2, 10)
+	pool := workerpool.New(2, 10) //nolint:staticcheck // OK in tests
 	defer func() { <-pool.Shutdown() }()
 
 	p := New().SetWorkerPool(pool)

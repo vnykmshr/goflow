@@ -156,7 +156,7 @@ func NewWithConfig(cfg Config) Scheduler {
 
 	// Apply defaults
 	if s.pool == nil {
-		s.pool = workerpool.New(4, 100)
+		s.pool = workerpool.New(4, 100) //nolint:staticcheck // Default pool, OK to use deprecated
 		s.ownPool = true
 	}
 	if s.location == nil {
