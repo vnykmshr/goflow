@@ -11,7 +11,7 @@ Worker Pool:
 
 The worker pool provides controlled concurrent execution:
 
-	pool := workerpool.New(4, 100) // 4 workers, queue size 100
+	pool, _ := workerpool.NewSafe(4, 100) // 4 workers, queue size 100
 	defer pool.Shutdown()
 
 	task := workerpool.TaskFunc(func(ctx context.Context) error {

@@ -14,7 +14,10 @@ import (
 
 func main() {
 	// Create worker pool with 3 workers and queue size 10
-	pool := workerpool.New(3, 10)
+	pool, err := workerpool.NewSafe(3, 10)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Ensure graceful shutdown
 	defer func() {

@@ -25,7 +25,7 @@ Example usage:
 	)
 
 	limiter, _ := bucket.NewSafe(10, 20) // 10 RPS, burst 20
-	pool := workerpool.New(5, 100) // 5 workers, queue 100
+	pool, _ := workerpool.NewSafe(5, 100) // 5 workers, queue 100
 
 	if limiter.Allow() {
 		pool.Submit(task)

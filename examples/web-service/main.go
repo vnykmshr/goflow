@@ -80,7 +80,10 @@ func NewWebService(port string) (*WebService, error) {
 		TaskTimeout: 30 * time.Second,
 	}
 
-	workers := workerpool.NewWithConfig(workerConfig)
+	workers, err := workerpool.NewWithConfigSafe(workerConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Create task scheduler
 	sched := scheduler.New()

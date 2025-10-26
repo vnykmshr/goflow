@@ -358,7 +358,7 @@ Integration with Other Packages:
 The stream package integrates well with other goflow components:
 
 	// With worker pool for parallel processing
-	pool := workerpool.New(4, 100)
+	pool, _ := workerpool.NewSafe(4, 100)
 	err := stream.FromSlice(tasks).ForEach(ctx, func(task Task) {
 		pool.Submit(workerpool.TaskFunc(func(ctx context.Context) error {
 			return processTask(task)

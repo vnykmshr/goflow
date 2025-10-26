@@ -3,7 +3,10 @@
 //
 // Basic usage:
 //
-//	pool := workerpool.New(4, 100)
+//	pool, err := workerpool.NewSafe(4, 100)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 //	defer func() { <-pool.Shutdown() }()
 //
 //	task := workerpool.TaskFunc(func(ctx context.Context) error {
