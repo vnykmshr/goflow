@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -100,8 +101,11 @@ func TestPipelineWithWorkerPool(t *testing.T) {
 
 	// Execute multiple items
 	const numItems = 10
+	var wg sync.WaitGroup
+	wg.Add(numItems)
 	for i := 0; i < numItems; i++ {
 		go func(id int) {
+			defer wg.Done()
 			_, err := p.Execute(context.Background(), id)
 			if err != nil {
 				t.Errorf("execution %d failed: %v", id, err)
@@ -109,8 +113,8 @@ func TestPipelineWithWorkerPool(t *testing.T) {
 		}(i)
 	}
 
-	// Wait for all to be processed
-	testutil.WaitForInt32(t, &processedCount, numItems, 2*time.Second)
+	// Wait for all Execute calls to complete
+	wg.Wait()
 
 	stats := p.Stats()
 	if stats.TotalExecutions != numItems {

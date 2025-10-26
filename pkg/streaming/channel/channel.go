@@ -346,6 +346,21 @@ func (ch *backpressureChannel[T]) blockingSend(ctx context.Context, value T) err
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 
+	// Start a goroutine to watch for context cancellation
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			// Context canceled, wake up waiters
+			ch.sendCond.Broadcast()
+		case <-done:
+			// Normal exit, cleanup
+			return
+		}
+	}()
+
 	for ch.count >= len(ch.buffer) && !ch.IsClosed() {
 		if ch.config.OnBlock != nil {
 			ch.config.OnBlock()
@@ -359,8 +374,15 @@ func (ch *backpressureChannel[T]) blockingSend(ctx context.Context, value T) err
 		default:
 		}
 
-		// Wait for space with timeout checking
+		// Wait for space
 		ch.sendCond.Wait()
+
+		// Check context again after waking up
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 	}
 
 	if ch.IsClosed() {
@@ -437,6 +459,21 @@ func (ch *backpressureChannel[T]) blockingReceive(ctx context.Context) (T, error
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 
+	// Start a goroutine to watch for context cancellation
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			// Context canceled, wake up waiters
+			ch.recvCond.Broadcast()
+		case <-done:
+			// Normal exit, cleanup
+			return
+		}
+	}()
+
 	for ch.count == 0 && !ch.IsClosed() {
 		// Check for context cancellation before waiting
 		select {
@@ -447,6 +484,13 @@ func (ch *backpressureChannel[T]) blockingReceive(ctx context.Context) (T, error
 
 		// Wait for data
 		ch.recvCond.Wait()
+
+		// Check context again after waking up
+		select {
+		case <-ctx.Done():
+			return zero, ctx.Err()
+		default:
+		}
 	}
 
 	if ch.count == 0 && ch.IsClosed() {
