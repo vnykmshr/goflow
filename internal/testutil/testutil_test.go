@@ -64,18 +64,18 @@ func TestWaitForInt64(t *testing.T) {
 }
 
 func TestAssertEventually(t *testing.T) {
-	var flag bool
+	var flag atomic.Int32
 
 	go func() {
 		time.Sleep(50 * time.Millisecond)
-		flag = true
+		flag.Store(1)
 	}()
 
 	AssertEventually(t, func() bool {
-		return flag
+		return flag.Load() == 1
 	})
 
-	if !flag {
+	if flag.Load() != 1 {
 		t.Error("flag should be true")
 	}
 }
@@ -191,16 +191,16 @@ func TestCallbackTrackerAssertions(t *testing.T) {
 
 func TestEventuallyWithContext(t *testing.T) {
 	t.Run("condition met", func(t *testing.T) {
-		var flag bool
+		var flag atomic.Int32
 		ctx := context.Background()
 
 		go func() {
 			time.Sleep(30 * time.Millisecond)
-			flag = true
+			flag.Store(1)
 		}()
 
 		EventuallyWithContext(t, ctx, func() bool {
-			return flag
+			return flag.Load() == 1
 		}, 10*time.Millisecond)
 	})
 }
