@@ -94,6 +94,9 @@ type worker struct {
 }
 
 // New creates a new worker pool with the specified number of workers and queue size.
+//
+// Deprecated: Use NewSafe instead. New panics if parameters are invalid.
+// NewSafe returns an error instead of panicking, making it safer for production use.
 func New(workerCount, queueSize int) Pool {
 	return NewWithConfig(Config{
 		WorkerCount: workerCount,
@@ -102,6 +105,9 @@ func New(workerCount, queueSize int) Pool {
 }
 
 // NewWithConfig creates a new worker pool with the specified configuration.
+//
+// Deprecated: Use NewWithConfigSafe instead. NewWithConfig panics if configuration is invalid.
+// NewWithConfigSafe returns an error instead of panicking, making it safer for production use.
 func NewWithConfig(config Config) Pool {
 	if config.WorkerCount <= 0 {
 		panic("worker count must be positive, got " + fmt.Sprint(config.WorkerCount))
@@ -134,4 +140,49 @@ func NewWithConfig(config Config) Pool {
 	}
 
 	return pool
+}
+
+// NewSafe creates a new worker pool with the specified number of workers and queue size.
+// Returns an error if parameters are invalid instead of panicking.
+func NewSafe(workerCount, queueSize int) (Pool, error) {
+	return NewWithConfigSafe(Config{
+		WorkerCount: workerCount,
+		QueueSize:   queueSize,
+	})
+}
+
+// NewWithConfigSafe creates a new worker pool with the specified configuration.
+// Returns an error if configuration is invalid instead of panicking.
+func NewWithConfigSafe(config Config) (Pool, error) {
+	if config.WorkerCount <= 0 {
+		return nil, fmt.Errorf("worker count must be positive, got %d", config.WorkerCount)
+	}
+
+	// Use reasonable defaults
+	queueSize := config.QueueSize
+	if queueSize == 0 {
+		queueSize = config.WorkerCount * 2
+	}
+
+	pool := &workerPool{
+		config:      config,
+		taskQueue:   make(chan Task, queueSize),
+		resultQueue: make(chan Result, config.WorkerCount),
+		shutdownCh:  make(chan struct{}),
+	}
+
+	// Create and start workers
+	pool.workers = make([]worker, config.WorkerCount)
+	for i := 0; i < config.WorkerCount; i++ {
+		pool.workers[i] = worker{
+			id:      i,
+			pool:    pool,
+			stopCh:  make(chan struct{}),
+			stopped: make(chan struct{}),
+		}
+		pool.workerWg.Add(1)
+		go pool.workers[i].run()
+	}
+
+	return pool, nil
 }
