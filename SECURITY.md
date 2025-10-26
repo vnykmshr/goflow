@@ -4,10 +4,10 @@
 
 We release patches for security vulnerabilities in the following versions:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 1.0.x   | Yes       |
+| < 1.0   | No        |
 
 ## Reporting a Vulnerability
 
@@ -62,7 +62,7 @@ When using goflow in production:
 
 **Distributed Rate Limiting:**
 
-⚠️  **Distributed rate limiting requires careful security configuration:**
+WARNING: Distributed rate limiting requires careful security configuration:
 
 1. **Redis Authentication** (Required for Production)
    ```go
@@ -90,7 +90,7 @@ When using goflow in production:
 
 4. **Fallback Behavior Security Risk**
 
-   ⚠️  **CRITICAL**: When `FallbackToLocal=true` and Redis fails, your rate limit increases by N× (where N = number of instances):
+   CRITICAL: When `FallbackToLocal=true` and Redis fails, your rate limit increases by N× (where N = number of instances):
 
    - Normal operation: 100 RPS globally across all instances
    - Redis failure: 100 RPS **per instance** = 1000 RPS with 10 instances

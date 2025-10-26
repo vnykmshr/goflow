@@ -9,7 +9,7 @@ Basic usage:
 
 	limiter, err := concurrency.NewSafe(10) // Allow 10 concurrent operations
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if limiter.Acquire() {
@@ -41,7 +41,7 @@ Worker Pool Pattern:
 
 	limiter, err := concurrency.NewSafe(5) // Max 5 concurrent workers
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	var wg sync.WaitGroup
@@ -66,7 +66,7 @@ Database Connection Limiting:
 
 	dbLimiter, err := concurrency.NewSafe(20) // Max 20 DB connections
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	func queryDatabase(query string) error {
@@ -84,7 +84,7 @@ HTTP Server Limiting:
 
 	requestLimiter, err := concurrency.NewSafe(1000) // Max 1000 concurrent requests
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	func handler(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +128,7 @@ Dynamic Configuration:
 	// Start with capacity for normal load
 	limiter, err := concurrency.NewSafe(10)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// Increase capacity during peak hours
@@ -156,7 +156,7 @@ Advanced Configuration:
 	}
 	limiter, err := concurrency.NewWithConfigSafe(config)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 Graceful Shutdown:

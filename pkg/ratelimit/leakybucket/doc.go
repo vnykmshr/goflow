@@ -10,7 +10,7 @@ Basic usage:
 
 	limiter, err := leakybucket.NewSafe(5, 10) // 5 requests/sec leak rate, capacity 10
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if limiter.Allow() {
 		// Process request
@@ -29,13 +29,13 @@ Comparison with Token Bucket:
 	// Token Bucket: Allows bursts, starts with full tokens
 	tokenLimiter, err := bucket.NewSafe(5, 10) // Allows immediate burst of 10
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// Leaky Bucket: Smooth flow, starts empty
 	leakyLimiter, err2 := leakybucket.NewSafe(5, 10) // Builds up to capacity gradually
 	if err2 != nil {
-		panic(err2)
+		log.Fatal(err2)
 	}
 
 Use Cases:
@@ -61,7 +61,7 @@ Configuration Options:
 	}
 	limiter, err := leakybucket.NewWithConfigSafe(config)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 Advanced Features:
