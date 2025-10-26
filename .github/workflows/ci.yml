@@ -99,7 +99,6 @@ jobs:
 
     - name: Build examples
       run: |
-        go build -o bin/distributed-rate-limiting ./examples/distributed-rate-limiting
         go build -o bin/web-service ./examples/web-service
 
     - name: Verify examples work
