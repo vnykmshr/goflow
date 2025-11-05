@@ -35,17 +35,18 @@ jobs:
         echo "✓ Go modules are verified and up to date"
         go mod verify
 
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v4
-      with:
-        fail-on-severity: moderate
-        deny-licenses: GPL-2.0, GPL-3.0
+  # Dependency Review disabled - requires GitHub Advanced Security
+  # dependency-review:
+  #   name: Dependency Review
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #
+  #   steps:
+  #   - name: Check out code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Dependency Review
+  #     uses: actions/dependency-review-action@v4
+  #     with:
+  #       fail-on-severity: moderate
+  #       deny-licenses: GPL-2.0, GPL-3.0

@@ -1,5 +1,3 @@
-version: "2"
-
 run:
   timeout: 10m
   tests: true
@@ -22,102 +20,96 @@ linters:
   disable:
     - varnamelen  # Too noisy for short variable names
 
-  settings:
-    govet:
-      enable-all: true
-      disable:
-        - fieldalignment  # Often not worth the optimization noise
-    gocyclo:
-      min-complexity: 15  # More realistic threshold
-    goconst:
-      min-len: 3
-      min-occurrences: 3
-    misspell:
-      locale: US
-    unparam:
-      check-exported: false
-    revive:
-      rules:
-        - name: var-naming
-          disabled: true  # Allow common Go naming patterns
-
-  exclusions:
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Often not worth the optimization noise
+  gocyclo:
+    min-complexity: 15  # More realistic threshold
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  misspell:
+    locale: US
+  unparam:
+    check-exported: false
+  revive:
     rules:
-      # All test files - completely exempt
-      - path: "_test\\.go$"
-        linters:
-          - errcheck
-          - revive
-          - gocyclo
-          - unparam
-          - goconst
-          - staticcheck
-          - prealloc
-          - misspell
-          - unconvert
-          - unused
-          - ineffassign
-          - govet
-      # All example files
-      - path: "example"
-        linters:
-          - errcheck
-          - revive
-          - gocyclo
-          - unparam
-          - goconst
-          - staticcheck
-          - prealloc
-          - misspell
-          - unconvert
-          - unused
-          - ineffassign
-          - govet
-      # All benchmark files
-      - path: "bench"
-        linters:
-          - errcheck
-          - revive
-          - gocyclo
-          - unparam
-          - goconst
-          - staticcheck
-          - prealloc
-          - misspell
-          - unconvert
-          - unused
-          - ineffassign
-          - govet
-      # Examples directory - completely exempt
-      - path: "examples/"
-        linters:
-          - errcheck
-          - revive
-          - gocyclo
-          - unparam
-          - goconst
-          - staticcheck
-          - prealloc
-          - misspell
-          - unconvert
-          - unused
-          - ineffassign
-          - govet
-      # Generated files
-      - path: "\\.pb\\.go$"
-        linters:
-          - errcheck
-          - revive
-          - staticcheck
-
-formatters:
-  settings:
-    gofmt:
-      simplify: true
-    goimports:
-      local-prefixes:
-        - github.com/vnykmshr/goflow
+      - name: var-naming
+        disabled: true  # Allow common Go naming patterns
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/vnykmshr/goflow
 
 issues:
   max-issues-per-linter: 1
   max-same-issues: 1
+  exclude-rules:
+    # All test files - completely exempt
+    - path: "_test\\.go$"
+      linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # All example files
+    - path: "example"
+      linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # All benchmark files
+    - path: "bench"
+      linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # Examples directory - completely exempt
+    - path: "examples/"
+      linters:
+        - errcheck
+        - revive
+        - gocyclo
+        - unparam
+        - goconst
+        - staticcheck
+        - prealloc
+        - misspell
+        - unconvert
+        - unused
+        - ineffassign
+        - govet
+    # Generated files
+    - path: "\\.pb\\.go$"
+      linters:
+        - errcheck
+        - revive
+        - staticcheck
