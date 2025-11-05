@@ -79,7 +79,7 @@ func TestStreamProcessingPipeline(t *testing.T) {
 		Filter(func(x int) bool { return x%2 == 0 }). // Even numbers: 2,4,6,8,10
 		Map(func(x int) int { return x * 2 }).        // Double: 4,8,12,16,20
 		Limit(3).                                     // Take first 3: 4,8,12
-		Peek(func(x int) {
+		Peek(func(_ int) {
 			atomic.AddInt32(&processed, 1)
 		}).
 		ToSlice(context.Background())
@@ -140,7 +140,7 @@ func TestChannelBackpressure(t *testing.T) {
 		config := channel.Config{
 			BufferSize: 2,
 			Strategy:   channel.Drop,
-			OnDrop: func(value interface{}) {
+			OnDrop: func(_ interface{}) {
 				atomic.AddInt32(&dropped, 1)
 			},
 		}
@@ -171,7 +171,7 @@ func TestChannelBackpressure(t *testing.T) {
 		config := channel.Config{
 			BufferSize: 2,
 			Strategy:   channel.DropOldest,
-			OnDrop: func(value interface{}) {
+			OnDrop: func(_ interface{}) {
 				atomic.AddInt32(&dropped, 1)
 			},
 		}
@@ -214,7 +214,7 @@ func TestWriterConcurrency(t *testing.T) {
 
 	done := make(chan bool, goroutines)
 	for i := 0; i < goroutines; i++ {
-		go func(id int) {
+		go func(_ int) {
 			defer func() { done <- true }()
 
 			for j := 0; j < writesPerGoroutine; j++ {

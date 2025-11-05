@@ -80,10 +80,12 @@ func TestPipelineWithWorkerPool(t *testing.T) {
 	pool := workerpool.New(3, 20) //nolint:staticcheck // OK in tests
 	defer func() { <-pool.Shutdown() }()
 
-	// Consume results in background
+	// Consume results in background to prevent blocking
+	resultsCh := pool.Results()
 	go func() {
-		for range pool.Results() {
-			// Drain results
+		for range resultsCh {
+			// Drain result channel to prevent blocking
+			continue
 		}
 	}()
 
@@ -218,6 +220,7 @@ func TestPipelineErrorHandling(t *testing.T) {
 
 	if result == nil {
 		t.Fatal("result should not be nil even with error")
+		return
 	}
 
 	// Should have executed 2 stages

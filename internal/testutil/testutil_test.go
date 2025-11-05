@@ -199,7 +199,7 @@ func TestEventuallyWithContext(t *testing.T) {
 			flag.Store(1)
 		}()
 
-		EventuallyWithContext(t, ctx, func() bool {
+		EventuallyWithContext(ctx, t, func() bool {
 			return flag.Load() == 1
 		}, 10*time.Millisecond)
 	})

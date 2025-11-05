@@ -72,7 +72,7 @@ func Eventually(t *testing.T, condition func() bool, timeout, interval time.Dura
 }
 
 // EventuallyWithContext is like Eventually but respects context cancellation.
-func EventuallyWithContext(t *testing.T, ctx context.Context, condition func() bool, interval time.Duration) {
+func EventuallyWithContext(ctx context.Context, t *testing.T, condition func() bool, interval time.Duration) {
 	t.Helper()
 
 	ticker := time.NewTicker(interval)

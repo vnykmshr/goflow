@@ -71,7 +71,7 @@ This document summarizes the comprehensive test suite review and improvements ma
 **Async Testing Helpers**:
 ```go
 Eventually(t, condition, timeout, interval)     // Retry until condition met
-EventuallyWithContext(t, ctx, condition, interval) // With context support
+EventuallyWithContext(ctx, t, condition, interval) // With context support
 AssertEventually(t, condition)                  // Default 1s timeout
 WaitForInt32(t, *value, expected, timeout)      // Wait for atomic int32
 WaitForInt64(t, *value, expected, timeout)      // Wait for atomic int64
