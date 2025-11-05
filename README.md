@@ -118,7 +118,7 @@ Run `make test` manually before pushing changes.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
+See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for contribution guidelines.
 
 ## License
 
