@@ -4,22 +4,21 @@ run:
   timeout: 10m
 
 linters:
-  - errcheck
-  - govet
-  - ineffassign
-  - staticcheck
-  - unused
-  - misspell
-  - unconvert
-  - goconst
-  - gocyclo
-  - unparam
-  - prealloc
-  - revive
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - unconvert
+    - goconst
+    - gocyclo
+    - unparam
+    - prealloc
+    - revive
 
 output:
   formats:
-    - format: colored-line-number
-
-# Note: linter settings are intentionally minimal for golangci-lint v2 compatibility
-# v2 has a restricted schema compared to v1
+    github-actions:
+      path: stdout
