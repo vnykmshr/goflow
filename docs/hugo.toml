@@ -11,23 +11,36 @@ theme = 'hugo-book'
   BookEditPath = 'edit/main/docs/content'
   BookSection = 'docs'
   BookMenuBundle = '/menu'
+  # Show breadcrumbs for navigation context
+  BookBreadcrumb = true
+  # Logo/brand
+  BookLogo = '/goflow-logo.svg'
 
-# Code highlighting
+# Code highlighting - use noClasses for theme-aware highlighting
 [markup]
   [markup.highlight]
-    style = 'github'
-    lineNos = false
+    noClasses = false
     guessSyntax = true
+    lineNos = false
   [markup.goldmark.renderer]
     unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
 
-# Menu links
+# Menu links shown in header
 [menu]
   [[menu.before]]
     name = "GitHub"
     url = "https://github.com/vnykmshr/goflow"
     weight = 10
   [[menu.before]]
-    name = "pkg.go.dev"
+    name = "API Docs"
     url = "https://pkg.go.dev/github.com/vnykmshr/goflow"
     weight = 20
+
+  # After menu (shown after sidebar content)
+  [[menu.after]]
+    name = "Examples"
+    url = "https://github.com/vnykmshr/goflow/tree/main/examples"
+    weight = 10

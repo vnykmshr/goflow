@@ -1,0 +1,151 @@
+// Custom styles for goflow documentation
+
+// Fix code block contrast in dark mode
+// The issue is that Hugo's syntax highlighting generates inline styles
+// that assume a light background. We override to ensure readability.
+
+// Dark mode code block fixes
+@media (prefers-color-scheme: dark) {
+  // Ensure code text is always readable
+  .markdown code,
+  .markdown pre code {
+    color: #e9ecef;
+  }
+
+  // Override syntax highlighting for dark mode
+  .highlight pre,
+  .highlight code {
+    background: #1e1e1e !important;
+    color: #d4d4d4 !important;
+  }
+
+  // Syntax highlighting token colors for dark mode (VS Code Dark+ inspired)
+  .highlight {
+    .c, .c1, .cm { color: #6a9955 !important; } // Comments
+    .k, .kd, .kn, .kp, .kr { color: #569cd6 !important; } // Keywords
+    .s, .s1, .s2, .sb, .sc, .sd, .se, .sh, .si, .sx { color: #ce9178 !important; } // Strings
+    .n, .na, .nb, .nc, .nd, .ne, .nf, .ni, .nl, .nn, .no, .nt, .nv { color: #9cdcfe !important; } // Names
+    .m, .mf, .mh, .mi, .mo { color: #b5cea8 !important; } // Numbers
+    .o, .ow { color: #d4d4d4 !important; } // Operators
+    .p { color: #d4d4d4 !important; } // Punctuation
+    .err { color: #f44747 !important; } // Errors
+  }
+
+  // Inline code
+  .markdown code:not(pre code) {
+    background: #3c3c3c;
+    color: #e9ecef;
+    border-color: #4a4a4a;
+  }
+}
+
+// Light mode - ensure good contrast too
+@media (prefers-color-scheme: light) {
+  .highlight pre,
+  .highlight code {
+    background: #f6f8fa !important;
+    color: #24292e !important;
+  }
+
+  // GitHub-style syntax highlighting for light mode
+  .highlight {
+    .c, .c1, .cm { color: #6a737d !important; } // Comments
+    .k, .kd, .kn, .kp, .kr { color: #d73a49 !important; } // Keywords
+    .s, .s1, .s2, .sb, .sc, .sd, .se, .sh, .si, .sx { color: #032f62 !important; } // Strings
+    .n, .na, .nb, .nc, .nd, .ne, .nf, .ni, .nl, .nn, .no, .nt, .nv { color: #6f42c1 !important; } // Names
+    .m, .mf, .mh, .mi, .mo { color: #005cc5 !important; } // Numbers
+    .o, .ow { color: #d73a49 !important; } // Operators
+  }
+}
+
+// Improve navigation visibility
+.book-menu {
+  nav {
+    // Make menu items more visible
+    a {
+      padding: 0.5rem 0;
+      display: block;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    // Highlight current page
+    a.active {
+      font-weight: 600;
+      color: var(--color-link);
+    }
+  }
+}
+
+// Better table of contents styling
+.book-toc {
+  nav {
+    a {
+      padding: 0.25rem 0;
+      display: block;
+      font-size: var(--font-size-smaller);
+
+      &:hover {
+        color: var(--color-link);
+      }
+    }
+  }
+}
+
+// Improve content readability
+.markdown {
+  // Better heading spacing
+  h1, h2, h3, h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+
+  // Better list spacing
+  ul, ol {
+    padding-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  // Better table styling
+  table {
+    width: 100%;
+    margin: 1rem 0;
+
+    th {
+      text-align: left;
+      font-weight: 600;
+      background: var(--gray-100);
+    }
+
+    th, td {
+      padding: 0.5rem;
+      border: 1px solid var(--gray-200);
+    }
+  }
+}
+
+// Add "On this page" header to ToC
+.book-toc::before {
+  content: "On this page";
+  display: block;
+  font-weight: 600;
+  font-size: var(--font-size-smaller);
+  color: var(--gray-500);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// Better mobile experience
+@media screen and (max-width: 56rem) {
+  .book-menu {
+    nav a {
+      padding: 0.75rem 0;
+    }
+  }
+}
