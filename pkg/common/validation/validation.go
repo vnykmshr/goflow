@@ -2,14 +2,14 @@
 package validation
 
 import (
-	"github.com/vnykmshr/goflow/pkg/common/errors"
+	gferrors "github.com/vnykmshr/goflow/pkg/common/errors"
 )
 
 // ValidatePositive validates that an integer value is positive (> 0).
 // Returns a ValidationError if the value is not positive.
 func ValidatePositive(module, field string, value int) error {
 	if value <= 0 {
-		return errors.NewValidationError(module, field, value, "must be positive").
+		return gferrors.NewValidationError(module, field, value, "must be positive").
 			WithHint("value must be greater than 0")
 	}
 	return nil
@@ -19,7 +19,7 @@ func ValidatePositive(module, field string, value int) error {
 // Returns a ValidationError if the value is negative.
 func ValidateNonNegative(module, field string, value float64) error {
 	if value < 0 {
-		return errors.NewValidationError(module, field, value, "cannot be negative").
+		return gferrors.NewValidationError(module, field, value, "cannot be negative").
 			WithHint("use 0 or a positive value")
 	}
 	return nil
@@ -29,7 +29,7 @@ func ValidateNonNegative(module, field string, value float64) error {
 // Returns a ValidationError if the value is not positive.
 func ValidatePositiveFloat(module, field string, value float64) error {
 	if value <= 0 {
-		return errors.NewValidationError(module, field, value, "must be positive").
+		return gferrors.NewValidationError(module, field, value, "must be positive").
 			WithHint("value must be greater than 0")
 	}
 	return nil
@@ -39,7 +39,7 @@ func ValidatePositiveFloat(module, field string, value float64) error {
 // Returns a ValidationError if the value is nil.
 func ValidateNotNil(module, field string, value interface{}) error {
 	if value == nil {
-		return errors.NewValidationError(module, field, nil, "cannot be nil").
+		return gferrors.NewValidationError(module, field, nil, "cannot be nil").
 			WithHint("provide a valid " + field)
 	}
 	return nil
@@ -49,7 +49,7 @@ func ValidateNotNil(module, field string, value interface{}) error {
 // Returns a ValidationError if the string is empty.
 func ValidateNotEmpty(module, field string, value string) error {
 	if value == "" {
-		return errors.NewValidationError(module, field, value, "cannot be empty").
+		return gferrors.NewValidationError(module, field, value, "cannot be empty").
 			WithHint("provide a non-empty " + field)
 	}
 	return nil
