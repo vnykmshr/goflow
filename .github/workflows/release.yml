@@ -45,11 +45,11 @@ jobs:
         mkdir -p dist
 
         # Build example applications for multiple platforms
-        echo "Building distributed-rate-limiting example..."
-        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-linux-amd64 ./examples/distributed-rate-limiting
-        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-darwin-amd64 ./examples/distributed-rate-limiting
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-darwin-arm64 ./examples/distributed-rate-limiting
-        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/distributed-rate-limiting-windows-amd64.exe ./examples/distributed-rate-limiting
+        echo "Building rate_limiter example..."
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/rate_limiter-linux-amd64 ./examples/rate_limiter
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/rate_limiter-darwin-amd64 ./examples/rate_limiter
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/rate_limiter-darwin-arm64 ./examples/rate_limiter
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/rate_limiter-windows-amd64.exe ./examples/rate_limiter
 
         echo "Building web-service example..."
         GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/web-service-linux-amd64 ./examples/web-service
