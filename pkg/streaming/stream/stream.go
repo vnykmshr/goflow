@@ -103,10 +103,11 @@ type Source[T any] interface {
 
 // stream is the default implementation of Stream.
 type stream[T any] struct {
-	source   Source[T]
-	closed   int32 // atomic
-	pipeline []operation[T]
-	mu       sync.RWMutex
+	source     Source[T]
+	closed     int32 // atomic
+	pipeline   []operation[T]
+	mu         sync.RWMutex
+	cancelExec context.CancelFunc // cancels execute goroutines when stream is closed
 }
 
 // operation represents a stream operation that can be applied to elements.
@@ -666,6 +667,14 @@ func (s *stream[T]) Close() error {
 		return nil // Already closed
 	}
 
+	// Cancel any running execute goroutines
+	s.mu.Lock()
+	if s.cancelExec != nil {
+		s.cancelExec()
+		s.cancelExec = nil
+	}
+	s.mu.Unlock()
+
 	if s.source != nil {
 		return s.source.Close()
 	}
@@ -684,6 +693,20 @@ func (s *stream[T]) execute(ctx context.Context) (<-chan streamElement[T], error
 		return nil, ErrStreamClosed
 	}
 
+	// Create internal cancellable context for Close() to terminate goroutines.
+	// This is independent of the user's context - user context cancellation
+	// should propagate errors, but Close() should exit cleanly.
+	closeCtx, cancel := context.WithCancel(context.Background())
+
+	// Store cancel function so Close() can terminate goroutines
+	s.mu.Lock()
+	// Cancel any previous execution context (shouldn't happen in normal use)
+	if s.cancelExec != nil {
+		s.cancelExec()
+	}
+	s.cancelExec = cancel
+	s.mu.Unlock()
+
 	// Create the initial channel from source
 	sourceCh := make(chan streamElement[T], 100)
 
@@ -692,15 +715,25 @@ func (s *stream[T]) execute(ctx context.Context) (<-chan streamElement[T], error
 		defer close(sourceCh)
 
 		for {
+			// Check both user context and close context
 			select {
 			case <-ctx.Done():
 				sourceCh <- streamElement[T]{err: ctx.Err()}
+				return
+			case <-closeCtx.Done():
+				// Close() was called - exit cleanly without error
 				return
 			default:
 			}
 
 			value, hasMore, err := s.source.Next(ctx)
 			if err != nil {
+				// Check if Close() was called
+				select {
+				case <-closeCtx.Done():
+					return
+				default:
+				}
 				sourceCh <- streamElement[T]{err: err}
 				return
 			}
@@ -715,6 +748,9 @@ func (s *stream[T]) execute(ctx context.Context) (<-chan streamElement[T], error
 			case <-ctx.Done():
 				sourceCh <- streamElement[T]{err: ctx.Err()}
 				return
+			case <-closeCtx.Done():
+				// Close() was called - exit cleanly
+				return
 			}
 		}
 	}()
@@ -725,13 +761,19 @@ func (s *stream[T]) execute(ctx context.Context) (<-chan streamElement[T], error
 	for _, op := range s.pipeline {
 		nextCh := make(chan streamElement[T], 100)
 
-		go func(operation operation[T], input <-chan streamElement[T], output chan<- streamElement[T]) {
+		go func(operation operation[T], input <-chan streamElement[T], output chan<- streamElement[T], closeCh <-chan struct{}) {
 			defer close(output)
 			if err := operation.apply(ctx, input, output); err != nil {
+				// Don't propagate error if Close() was called
+				select {
+				case <-closeCh:
+					return
+				default:
+				}
 				// Propagate operation error to downstream consumers (fail-fast)
 				output <- streamElement[T]{err: err}
 			}
-		}(op, currentCh, nextCh)
+		}(op, currentCh, nextCh, closeCtx.Done())
 
 		currentCh = nextCh
 	}
