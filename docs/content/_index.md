@@ -44,9 +44,12 @@ func main() {
 
 - [Getting Started]({{< relref "/getting-started" >}})
 - [Building goflow]({{< relref "/building-goflow" >}})
+- [Decision Guide]({{< relref "/decision-guide" >}})
 - [Rate Limiting]({{< relref "/rate-limiting" >}})
 - [Task Scheduling]({{< relref "/task-scheduling" >}})
 - [Streaming]({{< relref "/streaming" >}})
+- [Migration Guide]({{< relref "/migration" >}})
+- [Changelog]({{< relref "/changelog" >}})
 
 ## Resources
 
