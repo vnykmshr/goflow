@@ -67,9 +67,21 @@ fmt:
 	goimports -w .
 	gofmt -s -w .
 
-# Run benchmarks
+# Run benchmarks (comprehensive suite)
+benchmark:
+	@echo "Running comprehensive benchmark suite..."
+	@echo ""
+	@echo "=== Stream Benchmarks ==="
+	go test -bench=. -benchmem -run=^$$ ./internal/benchmark/... -v 2>/dev/null | grep -E "^(Benchmark|ok|---)"
+	@echo ""
+	@echo "=== Pipeline Benchmarks ==="
+	go test -bench=. -benchmem -run=^$$ ./pkg/scheduling/pipeline/... -v 2>/dev/null | grep -E "^(Benchmark|ok|---)"
+	@echo ""
+	@echo "Benchmark complete. Use 'make bench-quick' for faster summary."
+
+# Quick benchmark (less verbose)
 bench:
-	go test -bench=. -benchmem ./...
+	go test -bench=. -benchmem -run=^$$ ./...
 
 # Update dependencies
 deps:
