@@ -10,7 +10,6 @@ theme = 'hugo-book'
   BookRepo = 'https://github.com/vnykmshr/goflow'
   BookEditPath = 'edit/main/docs/content'
   BookSection = 'docs'
-  BookMenuBundle = '/menu'
   # Show breadcrumbs for navigation context
   BookBreadcrumb = true
   # Logo/brand
