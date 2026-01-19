@@ -13,7 +13,7 @@ theme = 'hugo-book'
   # Show breadcrumbs for navigation context
   BookBreadcrumb = true
   # Logo/brand
-  BookLogo = '/goflow-logo.svg'
+  BookLogo = '/goflow/goflow-logo.svg'
 
 # Code highlighting - use noClasses for theme-aware highlighting
 [markup]
