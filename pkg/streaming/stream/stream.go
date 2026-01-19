@@ -727,7 +727,10 @@ func (s *stream[T]) execute(ctx context.Context) (<-chan streamElement[T], error
 
 		go func(operation operation[T], input <-chan streamElement[T], output chan<- streamElement[T]) {
 			defer close(output)
-			_ = operation.apply(ctx, input, output) // Ignore error as it's handled in stream processing
+			if err := operation.apply(ctx, input, output); err != nil {
+				// Propagate operation error to downstream consumers (fail-fast)
+				output <- streamElement[T]{err: err}
+			}
 		}(op, currentCh, nextCh)
 
 		currentCh = nextCh
