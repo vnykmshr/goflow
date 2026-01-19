@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vnykmshr/goflow/pkg/common/errors"
+	gferrors "github.com/vnykmshr/goflow/pkg/common/errors"
 	"github.com/vnykmshr/goflow/pkg/common/validation"
 	"github.com/vnykmshr/goflow/pkg/ratelimit/bucket"
 )
@@ -194,11 +194,11 @@ func NewSafe(leakRate bucket.Limit, capacity int) (Limiter, error) {
 // This is the recommended way to create leaky bucket limiters for production use.
 func NewWithConfigSafe(config Config) (Limiter, error) {
 	if err := validation.ValidateNonNegative("leakybucket", "leakRate", float64(config.LeakRate)); err != nil {
-		return nil, errors.NewValidationError("leakybucket", "leakRate", config.LeakRate, "leak rate must not be negative").
+		return nil, gferrors.NewValidationError("leakybucket", "leakRate", config.LeakRate, "leak rate must not be negative").
 			WithHint("leak rate determines how fast requests are processed")
 	}
 	if err := validation.ValidatePositive("leakybucket", "capacity", config.Capacity); err != nil {
-		return nil, errors.NewValidationError("leakybucket", "capacity", config.Capacity, "capacity must be positive").
+		return nil, gferrors.NewValidationError("leakybucket", "capacity", config.Capacity, "capacity must be positive").
 			WithHint("capacity determines how many requests can be queued")
 	}
 	if config.Clock == nil {

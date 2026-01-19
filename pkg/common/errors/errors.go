@@ -1,5 +1,5 @@
-// Package errors provides common error types and utilities for the goflow library.
-package errors
+// Package gferrors provides common error types and utilities for the goflow library.
+package gferrors
 
 import (
 	"errors"

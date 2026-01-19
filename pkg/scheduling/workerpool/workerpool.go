@@ -8,9 +8,23 @@ import (
 )
 
 // Submit adds a task to the pool for execution.
+// The task will be executed with context.Background().
+// Use SubmitWithContext to provide a custom context.
 func (p *workerPool) Submit(task Task) error {
+	return p.SubmitWithContext(context.Background(), task)
+}
+
+// SubmitWithContext adds a task to the pool for execution with the given context.
+// The context is passed to the task's Execute method, enabling timeout and
+// cancellation propagation. If the pool has a TaskTimeout configured, the
+// effective timeout will be the minimum of the context deadline and TaskTimeout.
+func (p *workerPool) SubmitWithContext(ctx context.Context, task Task) error {
 	if task == nil {
 		return fmt.Errorf("task cannot be nil")
+	}
+
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	p.mu.RLock()
@@ -21,11 +35,26 @@ func (p *workerPool) Submit(task Task) error {
 		return fmt.Errorf("cannot submit task: worker pool has been shut down")
 	}
 
+	// Check if context is already canceled before attempting to queue
+	// This ensures deterministic behavior for pre-canceled contexts
 	select {
-	case p.taskQueue <- task:
+	case <-ctx.Done():
+		return fmt.Errorf("cannot submit task: context canceled: %w", ctx.Err())
+	default:
+	}
+
+	twc := taskWithContext{
+		task: task,
+		ctx:  ctx,
+	}
+
+	select {
+	case p.taskQueue <- twc:
 		return nil
 	case <-p.shutdownCh:
 		return fmt.Errorf("cannot submit task: worker pool has been shut down")
+	case <-ctx.Done():
+		return fmt.Errorf("cannot submit task: context canceled: %w", ctx.Err())
 	}
 }
 
@@ -81,12 +110,12 @@ func (w *worker) run() {
 		select {
 		case <-w.stopCh:
 			return
-		case task, ok := <-w.pool.taskQueue:
+		case twc, ok := <-w.pool.taskQueue:
 			if !ok {
 				// Task queue closed, shutdown
 				return
 			}
-			w.executeTask(task)
+			w.executeTask(twc)
 		}
 	}
 }
@@ -102,8 +131,8 @@ func (w *worker) sendResult(result Result) {
 	}
 }
 
-// executeTask executes a single task.
-func (w *worker) executeTask(task Task) {
+// executeTask executes a single task with the provided context.
+func (w *worker) executeTask(twc taskWithContext) {
 	start := time.Now()
 	var err error
 
@@ -115,7 +144,7 @@ func (w *worker) executeTask(task Task) {
 
 		duration := time.Since(start)
 		result := Result{
-			Task:     task,
+			Task:     twc.task,
 			Error:    err,
 			Duration: duration,
 			WorkerID: w.id,
@@ -125,14 +154,20 @@ func (w *worker) executeTask(task Task) {
 		w.sendResult(result)
 	}()
 
-	// Create execution context with timeout if configured
-	ctx := context.Background()
+	// Start with the caller-provided context
+	ctx := twc.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Apply TaskTimeout if configured
+	// The effective timeout is the minimum of the context deadline and TaskTimeout
 	if w.pool.config.TaskTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, w.pool.config.TaskTimeout)
 		defer cancel()
 	}
 
-	// Execute the task
-	err = task.Execute(ctx)
+	// Execute the task with the propagated context
+	err = twc.task.Execute(ctx)
 }

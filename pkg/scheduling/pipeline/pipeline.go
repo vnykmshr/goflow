@@ -338,8 +338,8 @@ func (p *pipeline) executeStageInPool(ctx context.Context, stage Stage, input in
 		return nil
 	})
 
-	// Submit task to worker pool
-	if err := p.config.WorkerPool.Submit(task); err != nil {
+	// Submit task to worker pool with context propagation
+	if err := p.config.WorkerPool.SubmitWithContext(ctx, task); err != nil {
 		return input, fmt.Errorf("failed to submit stage %s to worker pool: %w", stage.Name(), err)
 	}
 

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vnykmshr/goflow/pkg/common/errors"
+	gferrors "github.com/vnykmshr/goflow/pkg/common/errors"
 	"github.com/vnykmshr/goflow/pkg/common/validation"
 )
 
@@ -175,7 +175,7 @@ func NewWithConfigSafe(config Config) (Limiter, error) {
 		return nil, err
 	}
 	if err := validation.ValidatePositive("bucket", "burst", config.Burst); err != nil {
-		return nil, errors.NewValidationError("bucket", "burst", config.Burst, "burst must be positive").
+		return nil, gferrors.NewValidationError("bucket", "burst", config.Burst, "burst must be positive").
 			WithHint("burst determines how many tokens can be consumed instantly")
 	}
 	if config.Clock == nil {
