@@ -95,9 +95,7 @@ func main() {
 
 ## Documentation
 
-- [Getting Started](./docs/GETTING_STARTED.md)
-- [Decision Guide](./docs/DECISION_GUIDE.md)
-- [Migration Guide](./docs/MIGRATION.md)
+- [Documentation Site](https://vnykmshr.github.io/goflow/)
 - [API Reference](https://pkg.go.dev/github.com/vnykmshr/goflow)
 - [Examples](./examples/)
 
@@ -118,7 +116,7 @@ The pre-commit hook automatically:
 
 ## Contributing
 
-See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for contribution guidelines.
+See [Contributing](https://vnykmshr.github.io/goflow/contributing/) for contribution guidelines.
 
 ## License
 
