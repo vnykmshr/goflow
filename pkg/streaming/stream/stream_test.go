@@ -255,6 +255,26 @@ func TestFindFirst(t *testing.T) {
 	testutil.AssertEqual(t, value, 0)
 }
 
+func TestFindAny(t *testing.T) {
+	// Test with non-empty stream
+	stream := FromSlice([]int{10, 20, 30})
+	defer func() { _ = stream.Close() }()
+
+	value, found, err := stream.FindAny(context.Background())
+	testutil.AssertNoError(t, err)
+	testutil.AssertEqual(t, found, true)
+	testutil.AssertEqual(t, value, 10)
+
+	// Test with empty stream
+	stream = Empty[int]()
+	defer func() { _ = stream.Close() }()
+
+	value, found, err = stream.FindAny(context.Background())
+	testutil.AssertNoError(t, err)
+	testutil.AssertEqual(t, found, false)
+	testutil.AssertEqual(t, value, 0)
+}
+
 func TestAnyMatch(t *testing.T) {
 	stream := FromSlice([]int{1, 2, 3, 4, 5})
 	defer func() { _ = stream.Close() }()
@@ -429,6 +449,193 @@ func TestGenerateInfinite(t *testing.T) {
 	testutil.AssertEqual(t, len(result), 5)
 	testutil.AssertEqual(t, result[0], 1)
 	testutil.AssertEqual(t, result[4], 5)
+}
+
+func TestContextCancellation_ToSlice(t *testing.T) {
+	// Create a slow generator
+	stream := Generate(func() int {
+		time.Sleep(50 * time.Millisecond)
+		return 1
+	}).Limit(100)
+	defer func() { _ = stream.Close() }()
+
+	// Cancel immediately
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := stream.ToSlice(ctx)
+	if err == nil {
+		t.Error("expected error with canceled context")
+	}
+}
+
+func TestContextCancellation_ForEach(t *testing.T) {
+	stream := Generate(func() int {
+		time.Sleep(50 * time.Millisecond)
+		return 1
+	}).Limit(100)
+	defer func() { _ = stream.Close() }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := stream.ForEach(ctx, func(_ int) {})
+	if err == nil {
+		t.Error("expected error with canceled context")
+	}
+}
+
+func TestClosedStream_ToSlice(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.ToSlice(context.Background())
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_Count(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.Count(context.Background())
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_Reduce(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.Reduce(context.Background(), 0, func(a, b int) int { return a + b })
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_AnyMatch(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.AnyMatch(context.Background(), func(_ int) bool { return true })
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_AllMatch(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.AllMatch(context.Background(), func(_ int) bool { return true })
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_Collect(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, err := stream.Collect(
+		context.Background(),
+		func() any { return nil },
+		func(_ any, _ int) {},
+		func(a, _ any) any { return a },
+	)
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_ForEach(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	err := stream.ForEach(context.Background(), func(_ int) {})
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_FindFirst(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, _, err := stream.FindFirst(context.Background())
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_Min(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, _, err := stream.Min(context.Background(), func(a, b int) int { return a - b })
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestClosedStream_Max(t *testing.T) {
+	stream := FromSlice([]int{1, 2, 3})
+	_ = stream.Close()
+
+	_, _, err := stream.Max(context.Background(), func(a, b int) int { return a - b })
+	if err != ErrStreamClosed {
+		t.Errorf("expected ErrStreamClosed, got %v", err)
+	}
+}
+
+func TestContextCancellation_Reduce(t *testing.T) {
+	stream := Generate(func() int {
+		time.Sleep(50 * time.Millisecond)
+		return 1
+	}).Limit(100)
+	defer func() { _ = stream.Close() }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := stream.Reduce(ctx, 0, func(a, b int) int { return a + b })
+	if err == nil {
+		t.Error("expected error with canceled context")
+	}
+}
+
+func TestContextCancellation_AnyMatch(t *testing.T) {
+	stream := Generate(func() int {
+		time.Sleep(50 * time.Millisecond)
+		return 1
+	}).Limit(100)
+	defer func() { _ = stream.Close() }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := stream.AnyMatch(ctx, func(x int) bool { return x > 0 })
+	if err == nil {
+		t.Error("expected error with canceled context")
+	}
+}
+
+func TestContextCancellation_AllMatch(t *testing.T) {
+	stream := Generate(func() int {
+		time.Sleep(50 * time.Millisecond)
+		return 1
+	}).Limit(100)
+	defer func() { _ = stream.Close() }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := stream.AllMatch(ctx, func(x int) bool { return x > 0 })
+	if err == nil {
+		t.Error("expected error with canceled context")
+	}
 }
 
 // Benchmark tests

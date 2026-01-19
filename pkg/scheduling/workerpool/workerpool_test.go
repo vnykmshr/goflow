@@ -380,3 +380,84 @@ func TestSubmitWithContext_CanceledBeforeSubmit(t *testing.T) {
 		t.Errorf("expected context canceled error, got %v", err)
 	}
 }
+
+// Safe constructor tests
+
+func TestNewSafe(t *testing.T) {
+	pool, err := NewSafe(2, 10)
+	if err != nil {
+		t.Fatalf("NewSafe should succeed with valid params: %v", err)
+	}
+	defer func() { <-pool.Shutdown() }()
+
+	if pool.Size() != 2 {
+		t.Errorf("expected pool size 2, got %d", pool.Size())
+	}
+}
+
+func TestNewSafe_InvalidWorkerCount(t *testing.T) {
+	_, err := NewSafe(0, 10)
+	if err == nil {
+		t.Error("NewSafe should fail with worker count 0")
+	}
+
+	_, err = NewSafe(-1, 10)
+	if err == nil {
+		t.Error("NewSafe should fail with negative worker count")
+	}
+}
+
+func TestNewWithConfigSafe(t *testing.T) {
+	config := Config{
+		WorkerCount: 3,
+		QueueSize:   20,
+		TaskTimeout: 10 * time.Second,
+	}
+	pool, err := NewWithConfigSafe(config)
+	if err != nil {
+		t.Fatalf("NewWithConfigSafe should succeed with valid config: %v", err)
+	}
+	defer func() { <-pool.Shutdown() }()
+
+	if pool.Size() != 3 {
+		t.Errorf("expected pool size 3, got %d", pool.Size())
+	}
+}
+
+func TestNewWithConfigSafe_InvalidConfig(t *testing.T) {
+	config := Config{
+		WorkerCount: 0,
+		QueueSize:   10,
+	}
+	_, err := NewWithConfigSafe(config)
+	if err == nil {
+		t.Error("NewWithConfigSafe should fail with worker count 0")
+	}
+}
+
+func TestNewWithConfigSafe_DefaultQueueSize(t *testing.T) {
+	config := Config{
+		WorkerCount: 5,
+		QueueSize:   0, // Should default to WorkerCount * 2
+	}
+	pool, err := NewWithConfigSafe(config)
+	if err != nil {
+		t.Fatalf("NewWithConfigSafe should succeed: %v", err)
+	}
+	defer func() { <-pool.Shutdown() }()
+
+	// Verify pool works correctly with default queue size
+	var executed atomic.Int32
+	task := TaskFunc(func(_ context.Context) error {
+		executed.Add(1)
+		return nil
+	})
+
+	if err := pool.Submit(task); err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.Eventually(t, func() bool {
+		return executed.Load() == 1
+	}, 100*time.Millisecond, 5*time.Millisecond)
+}

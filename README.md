@@ -103,18 +103,18 @@ func main() {
 
 ## Development
 
-Install the pre-commit hook for automatic code quality checks:
 ```bash
-make install-hooks
+make install-hooks  # Install pre-commit hook
+make test           # Run tests with race detection
+make lint           # Run linter
+make benchmark      # Run performance benchmarks
 ```
 
-The hook automatically:
+The pre-commit hook automatically:
 - Checks for potential secrets
 - Formats Go code with `goimports` and `gofmt`
 - Runs `golangci-lint` on changed files
 - Verifies the build succeeds
-
-Run `make test` manually before pushing changes.
 
 ## Contributing
 
