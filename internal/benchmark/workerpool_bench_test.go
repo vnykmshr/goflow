@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -258,7 +259,7 @@ func BenchmarkWorkerPoolShutdown(b *testing.B) {
 
 // workerLabel returns a readable label for worker counts.
 func workerLabel(workers int) string {
-	return string(rune('0'+workers)) + "workers"
+	return strconv.Itoa(workers) + "workers"
 }
 
 // scaleLabel returns a label for scale configuration.

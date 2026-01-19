@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -251,5 +252,5 @@ func BenchmarkChannelTryOperations(b *testing.B) {
 
 // contentionLabel returns a readable label for contention levels.
 func contentionLabel(level int) string {
-	return string(rune('0'+level/10)) + string(rune('0'+level%10)) + "producers"
+	return strconv.Itoa(level) + "producers"
 }
