@@ -40,7 +40,15 @@ type Result struct {
 // Pool represents a worker pool that can execute tasks concurrently.
 type Pool interface {
 	// Submit adds a task to the pool for execution.
+	// The task will be executed with context.Background().
+	// Use SubmitWithContext to provide a custom context.
 	Submit(task Task) error
+
+	// SubmitWithContext adds a task to the pool for execution with the given context.
+	// The context is passed to the task's Execute method, enabling timeout and
+	// cancellation propagation. If the pool has a TaskTimeout configured, the
+	// effective timeout will be the minimum of the context deadline and TaskTimeout.
+	SubmitWithContext(ctx context.Context, task Task) error
 
 	// Results returns a channel of task results.
 	Results() <-chan Result
@@ -74,7 +82,7 @@ type workerPool struct {
 	config Config
 
 	workers      []worker
-	taskQueue    chan Task
+	taskQueue    chan taskWithContext
 	resultQueue  chan Result
 	shutdownCh   chan struct{}
 	shutdownOnce sync.Once
@@ -91,6 +99,13 @@ type worker struct {
 	pool    *workerPool
 	stopCh  chan struct{}
 	stopped chan struct{}
+}
+
+// taskWithContext wraps a task with its execution context.
+// This enables context propagation from Submit to Execute.
+type taskWithContext struct {
+	task Task
+	ctx  context.Context
 }
 
 // New creates a new worker pool with the specified number of workers and queue size.
@@ -121,7 +136,7 @@ func NewWithConfig(config Config) Pool {
 
 	pool := &workerPool{
 		config:      config,
-		taskQueue:   make(chan Task, queueSize),
+		taskQueue:   make(chan taskWithContext, queueSize),
 		resultQueue: make(chan Result, config.WorkerCount),
 		shutdownCh:  make(chan struct{}),
 	}
@@ -166,7 +181,7 @@ func NewWithConfigSafe(config Config) (Pool, error) {
 
 	pool := &workerPool{
 		config:      config,
-		taskQueue:   make(chan Task, queueSize),
+		taskQueue:   make(chan taskWithContext, queueSize),
 		resultQueue: make(chan Result, config.WorkerCount),
 		shutdownCh:  make(chan struct{}),
 	}
