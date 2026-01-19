@@ -346,20 +346,12 @@ func (ch *backpressureChannel[T]) blockingSend(ctx context.Context, value T) err
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 
-	// Start a goroutine to watch for context cancellation
-	done := make(chan struct{})
-	defer close(done)
-
-	go func() {
-		select {
-		case <-ctx.Done():
-			// Context canceled, wake up waiters
-			ch.sendCond.Broadcast()
-		case <-done:
-			// Normal exit, cleanup
-			return
-		}
-	}()
+	// Use context.AfterFunc to wake waiters on context cancellation
+	// This is more efficient than spawning a goroutine per Send call
+	stop := context.AfterFunc(ctx, func() {
+		ch.sendCond.Broadcast()
+	})
+	defer stop()
 
 	for ch.count >= len(ch.buffer) && !ch.IsClosed() {
 		if ch.config.OnBlock != nil {
@@ -459,20 +451,12 @@ func (ch *backpressureChannel[T]) blockingReceive(ctx context.Context) (T, error
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
 
-	// Start a goroutine to watch for context cancellation
-	done := make(chan struct{})
-	defer close(done)
-
-	go func() {
-		select {
-		case <-ctx.Done():
-			// Context canceled, wake up waiters
-			ch.recvCond.Broadcast()
-		case <-done:
-			// Normal exit, cleanup
-			return
-		}
-	}()
+	// Use context.AfterFunc to wake waiters on context cancellation
+	// This is more efficient than spawning a goroutine per Receive call
+	stop := context.AfterFunc(ctx, func() {
+		ch.recvCond.Broadcast()
+	})
+	defer stop()
 
 	for ch.count == 0 && !ch.IsClosed() {
 		// Check for context cancellation before waiting

@@ -178,15 +178,20 @@ func (cl *concurrencyLimiter) notifyWaiters() {
 }
 
 // removeWaiter removes a waiter from the waiters list.
+// Uses swap-and-pop for O(1) amortized removal instead of O(n) slice rebuild.
+// Note: This does not preserve waiter order, which is acceptable as
+// Release() notifies the first waiter regardless of order.
 func (cl *concurrencyLimiter) removeWaiter(ready chan struct{}) {
 	cl.mu.Lock()
 	defer cl.mu.Unlock()
 
-	var remainingWaiters []waiter
-	for _, w := range cl.waiters {
-		if w.ready != ready {
-			remainingWaiters = append(remainingWaiters, w)
+	for i, w := range cl.waiters {
+		if w.ready == ready {
+			// Swap with last element and truncate (O(1) amortized)
+			lastIdx := len(cl.waiters) - 1
+			cl.waiters[i] = cl.waiters[lastIdx]
+			cl.waiters = cl.waiters[:lastIdx]
+			return
 		}
 	}
-	cl.waiters = remainingWaiters
 }

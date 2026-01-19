@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/vnykmshr/goflow/pkg/common/errors"
+	gferrors "github.com/vnykmshr/goflow/pkg/common/errors"
 )
 
 func TestValidatePositive(t *testing.T) {
@@ -30,7 +30,7 @@ func TestValidatePositive(t *testing.T) {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
-				if !errors.IsValidationError(err) {
+				if !gferrors.IsValidationError(err) {
 					t.Errorf("expected ValidationError, got %T", err)
 				}
 			} else {
@@ -67,7 +67,7 @@ func TestValidateNonNegative(t *testing.T) {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
-				if !errors.IsValidationError(err) {
+				if !gferrors.IsValidationError(err) {
 					t.Errorf("expected ValidationError, got %T", err)
 				}
 			} else {
@@ -104,7 +104,7 @@ func TestValidatePositiveFloat(t *testing.T) {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
-				if !errors.IsValidationError(err) {
+				if !gferrors.IsValidationError(err) {
 					t.Errorf("expected ValidationError, got %T", err)
 				}
 			} else {
@@ -143,7 +143,7 @@ func TestValidateNotNil(t *testing.T) {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
-				if !errors.IsValidationError(err) {
+				if !gferrors.IsValidationError(err) {
 					t.Errorf("expected ValidationError, got %T", err)
 				}
 			} else {
@@ -178,7 +178,7 @@ func TestValidateNotEmpty(t *testing.T) {
 				if err == nil {
 					t.Error("expected error, got nil")
 				}
-				if !errors.IsValidationError(err) {
+				if !gferrors.IsValidationError(err) {
 					t.Errorf("expected ValidationError, got %T", err)
 				}
 			} else {
@@ -197,13 +197,13 @@ func TestValidationErrorDetails(t *testing.T) {
 			t.Fatal("expected error")
 		}
 
-		var valErr *errors.ValidationError
-		if !errors.IsValidationError(err) {
+		var valErr *gferrors.ValidationError
+		if !gferrors.IsValidationError(err) {
 			t.Fatal("expected ValidationError")
 		}
 
 		// Extract the validation error
-		if e, ok := err.(*errors.ValidationError); ok {
+		if e, ok := err.(*gferrors.ValidationError); ok {
 			valErr = e
 		} else {
 			t.Fatal("could not cast to ValidationError")
@@ -232,8 +232,8 @@ func TestValidationErrorDetails(t *testing.T) {
 			t.Fatal("expected error")
 		}
 
-		var valErr *errors.ValidationError
-		if e, ok := err.(*errors.ValidationError); ok {
+		var valErr *gferrors.ValidationError
+		if e, ok := err.(*gferrors.ValidationError); ok {
 			valErr = e
 		} else {
 			t.Fatal("could not cast to ValidationError")
@@ -253,8 +253,8 @@ func TestValidationErrorDetails(t *testing.T) {
 			t.Fatal("expected error")
 		}
 
-		var valErr *errors.ValidationError
-		if e, ok := err.(*errors.ValidationError); ok {
+		var valErr *gferrors.ValidationError
+		if e, ok := err.(*gferrors.ValidationError); ok {
 			valErr = e
 		} else {
 			t.Fatal("could not cast to ValidationError")
@@ -288,15 +288,15 @@ func TestValidationErrorWrapping(t *testing.T) {
 				if tc.err == nil {
 					t.Fatal("expected error")
 				}
-				if !errors.IsValidationError(tc.err) {
+				if !gferrors.IsValidationError(tc.err) {
 					t.Error("error should be a ValidationError")
 				}
 				// Check if it wraps ErrInvalidConfiguration
-				var valErr *errors.ValidationError
-				if ok := errors.IsValidationError(tc.err); ok {
-					if e, ok := tc.err.(*errors.ValidationError); ok {
+				var valErr *gferrors.ValidationError
+				if ok := gferrors.IsValidationError(tc.err); ok {
+					if e, ok := tc.err.(*gferrors.ValidationError); ok {
 						valErr = e
-						if wrapped := valErr.Unwrap(); wrapped != errors.ErrInvalidConfiguration {
+						if wrapped := valErr.Unwrap(); wrapped != gferrors.ErrInvalidConfiguration {
 							t.Errorf("should unwrap to ErrInvalidConfiguration, got %v", wrapped)
 						}
 					}
