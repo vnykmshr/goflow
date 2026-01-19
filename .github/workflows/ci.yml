@@ -18,7 +18,7 @@ jobs:
 
       - run: go mod verify
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
 
       - run: go test -race ./...
 
