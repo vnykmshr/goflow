@@ -12,8 +12,8 @@ theme = 'hugo-book'
   BookSection = 'docs'
   # Show breadcrumbs for navigation context
   BookBreadcrumb = true
-  # Logo/brand
-  BookLogo = '/goflow/goflow-logo.svg'
+  # Logo/brand (relative to static/, Hugo's relURL handles baseURL)
+  BookLogo = 'goflow-logo.svg'
 
 # Code highlighting - use noClasses for theme-aware highlighting
 [markup]
