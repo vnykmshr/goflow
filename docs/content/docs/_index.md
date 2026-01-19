@@ -8,6 +8,10 @@ bookCollapseSection: false
 
 Welcome to the goflow documentation. goflow is a Go library for building concurrent applications with rate limiting, task scheduling, and streaming capabilities.
 
+{{< hint info >}}
+**New to goflow?** Start with [Why goflow]({{< relref "/docs/building-goflow" >}}) to understand the problem space and architecture.
+{{< /hint >}}
+
 ## Sections
 
 {{< columns >}}

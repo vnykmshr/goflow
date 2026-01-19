@@ -7,6 +7,10 @@ type: docs
 
 Go library for building concurrent applications with rate limiting, task scheduling, and streaming.
 
+{{< hint info >}}
+**New to goflow?** Read [Why goflow]({{< relref "/docs/building-goflow" >}}) to understand the problem space and architecture.
+{{< /hint >}}
+
 ## Installation
 
 ```bash
@@ -53,7 +57,6 @@ func main() {
 - [Streaming]({{< relref "/docs/features/streaming" >}}) — Functional data processing
 
 **Reference**
-- [Building goflow]({{< relref "/docs/reference/building-goflow" >}}) — Development setup
 - [Contributing]({{< relref "/docs/reference/contributing" >}}) — How to contribute
 - [Security]({{< relref "/docs/reference/security" >}}) — Security policy
 - [Changelog]({{< relref "/docs/reference/changelog" >}}) — Release history

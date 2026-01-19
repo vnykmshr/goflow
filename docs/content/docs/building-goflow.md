@@ -1,6 +1,6 @@
 ---
-title: "Building goflow"
-weight: 1
+title: "Why goflow"
+weight: 0
 ---
 
 # Building Concurrent Systems in Go
@@ -125,9 +125,6 @@ graph LR
     W1 --> R
     W2 --> R
     W3 --> R
-
-    style Q fill:#e1f5ff
-    style R fill:#e1ffe1
 ```
 
 Each worker runs independently, pulling tasks from the shared queue. Context cancellation propagates to all workers for coordinated shutdown. Panics are recovered and reported as errors.
@@ -153,11 +150,6 @@ graph LR
     M2 --> Stats
     M3 --> Stats
     M4 --> Stats
-
-    style S1 fill:#fff3cd
-    style S2 fill:#cff4fc
-    style S3 fill:#d1e7dd
-    style S4 fill:#f8d7da
 ```
 
 Pipelines track execution time and errors for each stage, enabling debugging slow stages and understanding failure modes.
@@ -193,16 +185,6 @@ graph TB
     Sorted --> ToSlice
     Sorted --> Reduce
     Sorted --> Count
-
-    style Source fill:#e1f5ff
-    style Filter fill:#fff3cd
-    style Map fill:#fff3cd
-    style Distinct fill:#fff3cd
-    style Sorted fill:#fff3cd
-    style ForEach fill:#d1e7dd
-    style ToSlice fill:#d1e7dd
-    style Reduce fill:#d1e7dd
-    style Count fill:#d1e7dd
 ```
 
 ## Code Examples

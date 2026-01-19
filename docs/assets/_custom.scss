@@ -149,3 +149,122 @@
     }
   }
 }
+
+// Mermaid diagram dark/light mode support
+@media (prefers-color-scheme: dark) {
+  .mermaid {
+    // Dark mode background
+    background: transparent !important;
+
+    // Override node colors for dark mode
+    .node rect,
+    .node circle,
+    .node ellipse,
+    .node polygon,
+    .node path {
+      fill: #2d333b !important;
+      stroke: #539bf5 !important;
+    }
+
+    // Text colors
+    .nodeLabel,
+    .label,
+    .edgeLabel {
+      color: #e6edf3 !important;
+      fill: #e6edf3 !important;
+    }
+
+    // Edge/arrow colors
+    .edgePath .path,
+    .flowchart-link {
+      stroke: #768390 !important;
+    }
+
+    // Arrowhead colors
+    marker path {
+      fill: #768390 !important;
+      stroke: #768390 !important;
+    }
+
+    // Subgraph styling
+    .cluster rect {
+      fill: #161b22 !important;
+      stroke: #30363d !important;
+    }
+
+    .cluster text,
+    .cluster span {
+      fill: #e6edf3 !important;
+      color: #e6edf3 !important;
+    }
+
+    // Sequence diagram
+    .actor {
+      fill: #2d333b !important;
+      stroke: #539bf5 !important;
+    }
+
+    .actor-line {
+      stroke: #768390 !important;
+    }
+
+    text.actor > tspan {
+      fill: #e6edf3 !important;
+    }
+
+    .messageLine0,
+    .messageLine1 {
+      stroke: #768390 !important;
+    }
+
+    .messageText {
+      fill: #e6edf3 !important;
+    }
+
+    .loopText,
+    .loopText > tspan {
+      fill: #e6edf3 !important;
+    }
+
+    .loopLine {
+      stroke: #30363d !important;
+    }
+
+    .note {
+      fill: #2d333b !important;
+      stroke: #539bf5 !important;
+    }
+
+    .noteText {
+      fill: #e6edf3 !important;
+    }
+
+    // Activation boxes
+    .activation0,
+    .activation1,
+    .activation2 {
+      fill: #388bfd !important;
+      stroke: #539bf5 !important;
+    }
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .mermaid {
+    background: transparent !important;
+
+    // Ensure good contrast in light mode
+    .nodeLabel,
+    .label,
+    .edgeLabel {
+      color: #1f2328 !important;
+      fill: #1f2328 !important;
+    }
+
+    .cluster text,
+    .cluster span {
+      fill: #1f2328 !important;
+      color: #1f2328 !important;
+    }
+  }
+}
