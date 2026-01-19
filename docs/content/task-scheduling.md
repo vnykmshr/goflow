@@ -105,27 +105,29 @@ Standard cron format with optional seconds:
 
 ## Pipeline
 
-Pipelines process data through multiple stages with configurable concurrency.
+Pipelines process data through multiple stages.
 
 ```go
 import "github.com/vnykmshr/goflow/pkg/scheduling/pipeline"
 
 p := pipeline.New()
 
-// Add stages
-p.AddStage("validate", validateFunc, 2)  // 2 concurrent workers
-p.AddStage("process", processFunc, 5)    // 5 concurrent workers
-p.AddStage("store", storeFunc, 3)        // 3 concurrent workers
+// Add stages using function syntax
+p.AddStageFunc("validate", func(ctx context.Context, input interface{}) (interface{}, error) {
+    // Validate input
+    return input, nil
+})
+p.AddStageFunc("process", func(ctx context.Context, input interface{}) (interface{}, error) {
+    // Process data
+    return input, nil
+})
+p.AddStageFunc("store", func(ctx context.Context, input interface{}) (interface{}, error) {
+    // Store result
+    return input, nil
+})
 
-// Start processing
-p.Start(ctx)
-
-// Send data
-p.Input() <- data
-
-// Close input and wait for completion
-close(p.Input())
-p.Wait()
+// Execute pipeline
+result, err := p.Execute(ctx, inputData)
 ```
 
 ### When to Use
@@ -144,15 +146,6 @@ defer cancel()
 
 pool.SubmitWithContext(ctx, task)
 ```
-
-## Metrics
-
-Scheduling components expose Prometheus metrics:
-
-- `workerpool_tasks_submitted_total`
-- `workerpool_tasks_completed_total`
-- `workerpool_queue_size`
-- `scheduler_jobs_executed_total`
 
 ## API Reference
 

@@ -93,10 +93,10 @@ sched.ScheduleCron("backup", "@daily", taskFunc)
 
 ```go
 // Functional data processing
-result := stream.FromSlice([]int{1, 2, 3, 4}).
+result, _ := stream.FromSlice([]int{1, 2, 3, 4}).
     Filter(func(x int) bool { return x > 2 }).
     Map(func(x int) int { return x * 2 }).
-    Collect() // [6, 8]
+    ToSlice(context.Background()) // [6, 8]
 ```
 
 ## Error Handling

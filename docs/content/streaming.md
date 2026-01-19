@@ -12,12 +12,15 @@ goflow provides functional stream processing and channel utilities for data pipe
 Streams enable functional-style operations on collections.
 
 ```go
-import "github.com/vnykmshr/goflow/pkg/streaming/stream"
+import (
+    "context"
+    "github.com/vnykmshr/goflow/pkg/streaming/stream"
+)
 
-result := stream.FromSlice([]int{1, 2, 3, 4, 5}).
+result, _ := stream.FromSlice([]int{1, 2, 3, 4, 5}).
     Filter(func(x int) bool { return x > 2 }).
     Map(func(x int) int { return x * 2 }).
-    Collect() // [6, 8, 10]
+    ToSlice(context.Background()) // [6, 8, 10]
 ```
 
 ### Available Operations
@@ -30,38 +33,40 @@ result := stream.FromSlice([]int{1, 2, 3, 4, 5}).
 | `Filter` | Keep elements matching predicate |
 | `FlatMap` | Transform and flatten |
 | `Distinct` | Remove duplicates |
-| `Take` | Keep first N elements |
+| `Limit` | Keep first N elements |
 | `Skip` | Skip first N elements |
 
 **Terminal Operations**
 
 | Operation | Description |
 |-----------|-------------|
-| `Collect` | Gather results into slice |
+| `ToSlice` | Gather results into slice |
 | `Reduce` | Combine elements into single value |
 | `ForEach` | Apply function to each element |
 | `Count` | Count elements |
-| `First` | Get first element |
-| `Any` | Check if any match predicate |
-| `All` | Check if all match predicate |
+| `FindFirst` | Get first element |
+| `AnyMatch` | Check if any match predicate |
+| `AllMatch` | Check if all match predicate |
 
 ### Examples
 
 ```go
+ctx := context.Background()
+
 // Sum of squares of even numbers
-sum := stream.FromSlice([]int{1, 2, 3, 4, 5}).
+sum, _ := stream.FromSlice([]int{1, 2, 3, 4, 5}).
     Filter(func(x int) bool { return x%2 == 0 }).
     Map(func(x int) int { return x * x }).
-    Reduce(0, func(a, b int) int { return a + b }) // 20
+    Reduce(ctx, 0, func(a, b int) int { return a + b }) // 20
 
 // Find first matching element
-first, ok := stream.FromSlice(users).
+first, ok, _ := stream.FromSlice(users).
     Filter(func(u User) bool { return u.Active }).
-    First()
+    FindFirst(ctx)
 
 // Check if any element matches
-hasAdmin := stream.FromSlice(users).
-    Any(func(u User) bool { return u.Role == "admin" })
+hasAdmin, _ := stream.FromSlice(users).
+    AnyMatch(ctx, func(u User) bool { return u.Role == "admin" })
 ```
 
 ## Channel Operations
@@ -148,10 +153,10 @@ for {
         break
     }
 
-    results := stream.FromSlice(batch).
+    results, _ := stream.FromSlice(batch).
         Filter(validate).
         Map(transform).
-        Collect()
+        ToSlice(ctx)
 
     processBatch(results)
 }

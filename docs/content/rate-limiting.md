@@ -101,18 +101,6 @@ if err != nil {
 }
 ```
 
-## Metrics
-
-Rate limiters expose Prometheus metrics when configured:
-
-```go
-limiter, _ := bucket.NewWithConfigSafe(bucket.Config{
-    Rate:     100,
-    Capacity: 200,
-    Metrics:  true,
-})
-```
-
 ## API Reference
 
 See [pkg.go.dev/github.com/vnykmshr/goflow/pkg/ratelimit](https://pkg.go.dev/github.com/vnykmshr/goflow/pkg/ratelimit) for complete API documentation.
