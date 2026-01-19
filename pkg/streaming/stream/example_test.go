@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 )
 
 // Example demonstrates basic stream usage.
@@ -270,11 +269,7 @@ func Example_generator() {
 		counter++
 		return counter
 	})
-	defer func() {
-		_ = stream.Close()
-		// Give goroutines time to terminate after context cancellation
-		time.Sleep(10 * time.Millisecond)
-	}()
+	defer func() { _ = stream.Close() }()
 
 	// Take first 5 even squares
 	result, err := stream.
