@@ -76,17 +76,22 @@ func Example_aggregation() {
 	numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	// Count elements
-	count, _ := FromSlice(numbers).Count(context.Background())
+	countStream := FromSlice(numbers)
+	count, _ := countStream.Count(context.Background())
+	_ = countStream.Close()
 	fmt.Printf("Count: %d\n", count)
 
 	// Sum using reduce
-	sum, _ := FromSlice(numbers).Reduce(context.Background(), 0, func(acc, x int) int {
+	sumStream := FromSlice(numbers)
+	sum, _ := sumStream.Reduce(context.Background(), 0, func(acc, x int) int {
 		return acc + x
 	})
+	_ = sumStream.Close()
 	fmt.Printf("Sum: %d\n", sum)
 
 	// Find min and max
-	minValue, found, _ := FromSlice(numbers).Min(context.Background(), func(a, b int) int {
+	minStream := FromSlice(numbers)
+	minValue, found, _ := minStream.Min(context.Background(), func(a, b int) int {
 		if a < b {
 			return -1
 		}
@@ -95,11 +100,13 @@ func Example_aggregation() {
 		}
 		return 0
 	})
+	_ = minStream.Close()
 	if found {
 		fmt.Printf("Min: %d\n", minValue)
 	}
 
-	maxValue, found, _ := FromSlice(numbers).Max(context.Background(), func(a, b int) int {
+	maxStream := FromSlice(numbers)
+	maxValue, found, _ := maxStream.Max(context.Background(), func(a, b int) int {
 		if a < b {
 			return -1
 		}
@@ -108,19 +115,24 @@ func Example_aggregation() {
 		}
 		return 0
 	})
+	_ = maxStream.Close()
 	if found {
 		fmt.Printf("Max: %d\n", maxValue)
 	}
 
 	// Check if any/all numbers meet criteria
-	hasEven, _ := FromSlice(numbers).AnyMatch(context.Background(), func(x int) bool {
+	anyStream := FromSlice(numbers)
+	hasEven, _ := anyStream.AnyMatch(context.Background(), func(x int) bool {
 		return x%2 == 0
 	})
+	_ = anyStream.Close()
 	fmt.Printf("Has even numbers: %t\n", hasEven)
 
-	allPositive, _ := FromSlice(numbers).AllMatch(context.Background(), func(x int) bool {
+	allStream := FromSlice(numbers)
+	allPositive, _ := allStream.AllMatch(context.Background(), func(x int) bool {
 		return x > 0
 	})
+	_ = allStream.Close()
 	fmt.Printf("All positive: %t\n", allPositive)
 
 	// Output:
