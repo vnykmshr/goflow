@@ -12,6 +12,11 @@ examples/web-service/web-service
 coverage.out
 coverage.html
 
-# Development artifacts  
+# Development artifacts
 todos/
 .claude/
+
+# Hugo (documentation site)
+docs/public/
+docs/resources/_gen/
+.hugo_build.lock

@@ -1,0 +1,33 @@
+baseURL = 'https://vnykmshr.github.io/goflow/'
+languageCode = 'en-us'
+title = 'goflow'
+theme = 'hugo-book'
+
+# Book theme parameters
+[params]
+  BookTheme = 'auto'
+  BookToC = true
+  BookRepo = 'https://github.com/vnykmshr/goflow'
+  BookEditPath = 'edit/main/docs/content'
+  BookSection = 'docs'
+  BookMenuBundle = '/menu'
+
+# Code highlighting
+[markup]
+  [markup.highlight]
+    style = 'github'
+    lineNos = false
+    guessSyntax = true
+  [markup.goldmark.renderer]
+    unsafe = true
+
+# Menu links
+[menu]
+  [[menu.before]]
+    name = "GitHub"
+    url = "https://github.com/vnykmshr/goflow"
+    weight = 10
+  [[menu.before]]
+    name = "pkg.go.dev"
+    url = "https://pkg.go.dev/github.com/vnykmshr/goflow"
+    weight = 20
