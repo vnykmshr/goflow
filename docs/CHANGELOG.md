@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+## [v1.4.0] - 2026-01-19
+
+### Added
+- Comprehensive benchmark suite (`make benchmark`)
+  - Stream benchmarks (FromSlice, Filter, Map, ToSlice, Reduce, Distinct)
+  - Channel benchmarks (Send/Receive, contention, backpressure strategies)
+  - WorkerPool benchmarks (submit/execute cycle, throughput, scaling)
+- Performance baseline documentation in release tracker
+
+### Changed
+- Pipeline stats use atomic operations for counters, reducing lock contention
+- Benchmark label formatting uses `strconv.Itoa` for all integer values
+
+## [v1.3.0] - 2026-01-19
+
+### Fixed
+- **Critical**: Goroutine leak in worker pool - workers now properly exit on shutdown
+- **Critical**: Context propagation in pipeline worker pool execution
+- Race condition in pipeline stats collection
+- Error handling in workerpool task submission
+
+### Changed
+- Worker pool uses `SubmitWithContext` for proper context propagation
+- Improved error wrapping consistency across packages
+- Enhanced goleak integration for goroutine leak detection in tests
+
+### Added
+- Comprehensive goroutine leak tests using `go.uber.org/goleak`
+
 ## [v1.2.0] - 2025-10-26
 
 ### Added
@@ -87,6 +116,8 @@ Initial release with production-ready components:
 - Prometheus metrics integration
 - Comprehensive documentation and examples
 
+[v1.4.0]: https://github.com/vnykmshr/goflow/releases/tag/v1.4.0
+[v1.3.0]: https://github.com/vnykmshr/goflow/releases/tag/v1.3.0
 [v1.2.0]: https://github.com/vnykmshr/goflow/releases/tag/v1.2.0
 [v1.0.2]: https://github.com/vnykmshr/goflow/releases/tag/v1.0.2
 [v1.0.1]: https://github.com/vnykmshr/goflow/releases/tag/v1.0.1
