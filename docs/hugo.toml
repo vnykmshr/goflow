@@ -34,10 +34,6 @@ theme = 'hugo-book'
     url = "https://github.com/vnykmshr/goflow"
     weight = 10
   [[menu.before]]
-    name = "Why goflow"
-    url = "/docs/building-goflow/"
-    weight = 15
-  [[menu.before]]
     name = "API Docs"
     url = "https://pkg.go.dev/github.com/vnykmshr/goflow"
     weight = 20
