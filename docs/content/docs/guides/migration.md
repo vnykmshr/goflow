@@ -1,6 +1,6 @@
 ---
 title: "Migration Guide"
-weight: 30
+weight: 3
 ---
 
 # Migration Guide

@@ -1,6 +1,6 @@
 ---
 title: "Rate Limiting"
-weight: 40
+weight: 1
 ---
 
 # Rate Limiting

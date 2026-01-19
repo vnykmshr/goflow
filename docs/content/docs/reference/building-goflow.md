@@ -1,6 +1,6 @@
 ---
 title: "Building goflow"
-weight: 5
+weight: 1
 ---
 
 # Building Concurrent Systems in Go

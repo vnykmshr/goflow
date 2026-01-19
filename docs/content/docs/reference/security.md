@@ -1,6 +1,6 @@
 ---
 title: "Security"
-weight: 90
+weight: 3
 ---
 
 # Security Policy

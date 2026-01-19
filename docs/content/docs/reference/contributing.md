@@ -1,6 +1,6 @@
 ---
 title: "Contributing"
-weight: 80
+weight: 2
 ---
 
 # Contributing to goflow

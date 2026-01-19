@@ -1,6 +1,6 @@
 ---
 title: "Decision Guide"
-weight: 20
+weight: 2
 ---
 
 # Component Selection Guide
