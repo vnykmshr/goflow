@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vnykmshr/goflow/pkg/scheduling/workerpool"
@@ -172,8 +173,17 @@ type Config struct {
 type pipeline struct {
 	stages []Stage
 	config Config
-	stats  Stats
-	mu     sync.RWMutex
+
+	// Atomic counters for hot path (reduces lock contention)
+	totalExecutions atomic.Int64
+	successfulRuns  atomic.Int64
+	failedRuns      atomic.Int64
+	totalDuration   atomic.Int64 // nanoseconds
+
+	// Mutex-protected fields (complex data structures)
+	mu              sync.RWMutex
+	lastExecutionAt time.Time
+	stageStats      map[string]StageStats
 }
 
 // New creates a new pipeline with default configuration.
@@ -186,11 +196,9 @@ func New() Pipeline {
 // NewWithConfig creates a new pipeline with the specified configuration.
 func NewWithConfig(config Config) Pipeline {
 	return &pipeline{
-		stages: make([]Stage, 0),
-		config: config,
-		stats: Stats{
-			StageStats: make(map[string]StageStats),
-		},
+		stages:     make([]Stage, 0),
+		config:     config,
+		stageStats: make(map[string]StageStats),
 	}
 }
 
@@ -362,8 +370,8 @@ func (p *pipeline) AddStage(stage Stage) Pipeline {
 	p.stages = append(p.stages, stage)
 
 	// Initialize stage stats if not exists
-	if _, exists := p.stats.StageStats[stage.Name()]; !exists {
-		p.stats.StageStats[stage.Name()] = StageStats{
+	if _, exists := p.stageStats[stage.Name()]; !exists {
+		p.stageStats[stage.Name()] = StageStats{
 			Name: stage.Name(),
 		}
 	}
@@ -404,46 +412,64 @@ func (p *pipeline) GetStages() []Stage {
 
 // Stats returns pipeline execution statistics.
 func (p *pipeline) Stats() Stats {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	// Read atomic counters (lock-free)
+	totalExec := p.totalExecutions.Load()
+	successRuns := p.successfulRuns.Load()
+	failedRuns := p.failedRuns.Load()
+	totalDur := time.Duration(p.totalDuration.Load())
 
-	// Create a copy to avoid race conditions
-	statsCopy := p.stats
-	statsCopy.StageStats = make(map[string]StageStats)
-	for k, v := range p.stats.StageStats {
-		statsCopy.StageStats[k] = v
+	// Read mutex-protected fields
+	p.mu.RLock()
+	lastExecAt := p.lastExecutionAt
+	stageStatsCopy := make(map[string]StageStats, len(p.stageStats))
+	for k, v := range p.stageStats {
+		stageStatsCopy[k] = v
 	}
+	p.mu.RUnlock()
 
 	// Calculate average duration
-	if statsCopy.TotalExecutions > 0 {
-		statsCopy.AverageDuration = time.Duration(int64(statsCopy.TotalDuration) / statsCopy.TotalExecutions)
+	var avgDur time.Duration
+	if totalExec > 0 {
+		avgDur = time.Duration(int64(totalDur) / totalExec)
 	}
 
-	return statsCopy
+	return Stats{
+		TotalExecutions: totalExec,
+		SuccessfulRuns:  successRuns,
+		FailedRuns:      failedRuns,
+		TotalDuration:   totalDur,
+		AverageDuration: avgDur,
+		StageStats:      stageStatsCopy,
+		LastExecutionAt: lastExecAt,
+	}
 }
 
 // updateStats updates pipeline statistics.
+// Uses atomic operations for counters to reduce lock contention.
 func (p *pipeline) updateStats(result *Result) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.stats.TotalExecutions++
-	p.stats.TotalDuration += result.Duration
-	p.stats.LastExecutionAt = result.EndTime
+	// Atomic updates for counters (lock-free hot path)
+	p.totalExecutions.Add(1)
+	p.totalDuration.Add(int64(result.Duration))
 
 	if result.Error == nil {
-		p.stats.SuccessfulRuns++
+		p.successfulRuns.Add(1)
 	} else {
-		p.stats.FailedRuns++
+		p.failedRuns.Add(1)
 	}
+
+	// Mutex only for time.Time (not atomically updatable)
+	p.mu.Lock()
+	p.lastExecutionAt = result.EndTime
+	p.mu.Unlock()
 }
 
 // updateStageStats updates statistics for a specific stage.
+// Requires mutex because map access is not atomic.
 func (p *pipeline) updateStageStats(stageName string, result StageResult) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	stats, exists := p.stats.StageStats[stageName]
+	stats, exists := p.stageStats[stageName]
 	if !exists {
 		stats = StageStats{Name: stageName}
 	}
@@ -462,5 +488,5 @@ func (p *pipeline) updateStageStats(stageName string, result StageResult) {
 		stats.AverageDuration = time.Duration(int64(stats.TotalDuration) / stats.ExecutionCount)
 	}
 
-	p.stats.StageStats[stageName] = stats
+	p.stageStats[stageName] = stats
 }
