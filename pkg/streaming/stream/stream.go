@@ -86,7 +86,9 @@ type Stream[T any] interface {
 
 	// Stream control
 
-	// Close closes the stream and releases resources.
+	// Close closes the stream and releases resources. It also cancels any
+	// running pipeline goroutines, allowing operations to terminate cleanly
+	// even if the stream was not fully consumed.
 	Close() error
 
 	// IsClosed returns true if the stream is closed.

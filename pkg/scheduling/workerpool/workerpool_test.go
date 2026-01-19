@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/vnykmshr/goflow/internal/testutil"
 )
 
 func TestWorkerPool_BasicExecution(t *testing.T) {
@@ -247,12 +249,9 @@ func TestContextCancellation(t *testing.T) {
 	}
 
 	// Wait for task to start
-	for i := 0; i < 50 && !taskStarted.Load(); i++ {
-		time.Sleep(5 * time.Millisecond)
-	}
-	if !taskStarted.Load() {
-		t.Fatal("task did not start")
-	}
+	testutil.Eventually(t, func() bool {
+		return taskStarted.Load()
+	}, 250*time.Millisecond, 5*time.Millisecond)
 
 	// Cancel the context
 	cancel()
