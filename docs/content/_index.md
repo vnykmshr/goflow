@@ -7,7 +7,7 @@ type: docs
 
 Go library for building concurrent applications with rate limiting, task scheduling, and streaming.
 
-> **New to goflow?** Read [Why goflow]({{< relref "/docs/building-goflow" >}}) to understand the problem space and architecture.
+> **New to goflow?** Read [Why goflow](docs/building-goflow/) to understand the problem space and architecture.
 
 ## Installation
 
