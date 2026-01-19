@@ -1,6 +1,6 @@
 ---
 title: "Why goflow"
-weight: 0
+bookHidden: true
 ---
 
 # Building Concurrent Systems in Go
